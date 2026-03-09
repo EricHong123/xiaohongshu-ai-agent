@@ -1,0 +1,48 @@
+#!/bin/bash
+# 小红书 AI Agent 启动器
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
+
+# 解析参数
+COMMAND=${1:-gui}
+
+case "$COMMAND" in
+    gui)
+        exec python3 cli.py --gui "$@"
+        ;;
+    search|-s)
+        shift
+        exec python3 cli.py --search "$@"
+        ;;
+    stats)
+        exec python3 cli.py --stats
+        ;;
+    chat|-c)
+        exec python3 cli.py --chat
+        ;;
+    config)
+        exec python3 cli.py --config
+        ;;
+    setup)
+        exec python3 setup.py
+        ;;
+    -h|--help|help|*)
+        echo "小红书 AI Agent CLI"
+        echo ""
+        echo "用法: xiaohongshu [命令]"
+        echo ""
+        echo "命令:"
+        echo "  gui        启动交互式界面"
+        echo "  search     搜索帖子"
+        echo "  stats      查看统计"
+        echo "  chat       AI 对话"
+        echo "  config     显示当前配置"
+        echo "  setup      快速配置向导"
+        echo ""
+        echo "示例:"
+        echo "  ./xiaohongshu gui"
+        echo "  ./xiaohongshu search -k 'AI Agent'"
+        echo "  ./xiaohongshu setup"
+        ;;
+esac
