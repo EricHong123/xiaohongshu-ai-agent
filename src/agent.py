@@ -209,6 +209,12 @@ class Database:
                 id INTEGER PRIMARY KEY AUTOINCREMENT, task_type TEXT, status TEXT, message TEXT, created_at TEXT
             )
         """)
+        # 对话历史表
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS chat_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT, role TEXT, content TEXT, created_at TEXT
+            )
+        """)
         self.conn.commit()
 
     def add_search_results(self, results):
@@ -260,6 +266,38 @@ class Database:
         cursor.execute("INSERT INTO task_logs (task_type, status, message, created_at) VALUES (?, ?, ?, ?)",
                       (task_type, status, message, now))
         self.conn.commit()
+
+    # ============== 对话历史 (Memory) ==============
+    def add_message(self, role: str, content: str):
+        """添加对话消息到历史"""
+        cursor = self.conn.cursor()
+        now = datetime.now().isoformat()
+        cursor.execute(
+            "INSERT INTO chat_history (role, content, created_at) VALUES (?, ?, ?)",
+            (role, content, now)
+        )
+        self.conn.commit()
+
+    def get_chat_history(self, limit: int = 50) -> List[Dict]:
+        """获取对话历史"""
+        cursor = self.conn.cursor()
+        cursor.execute(
+            "SELECT role, content, created_at FROM chat_history ORDER BY id DESC LIMIT ?",
+            (limit,)
+        )
+        return [{"role": row[0], "content": row[1], "created_at": row[2]} for row in cursor.fetchall()]
+
+    def clear_chat_history(self):
+        """清空对话历史"""
+        cursor = self.conn.cursor()
+        cursor.execute("DELETE FROM chat_history")
+        self.conn.commit()
+
+    def get_chat_history_count(self) -> int:
+        """获取历史消息数量"""
+        cursor = self.conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM chat_history")
+        return cursor.fetchone()[0]
 
     def get_stats(self):
         cursor = self.conn.cursor()
@@ -404,6 +442,11 @@ class XiaohongshuAgent:
         self.db = Database(db_path)
         print(f"   ✅ 数据库: {db_path}")
 
+        # 对话历史 (Memory)
+        self.chat_history_limit = 50  # 最多保存50条对话
+        history_count = self.db.get_chat_history_count()
+        print(f"   ✅ 对话历史: {history_count} 条")
+
         self.mcp = XiaohongshuMCP(mcp_url)
         print(f"   ✅ MCP: {mcp_url}")
 
@@ -423,13 +466,47 @@ class XiaohongshuAgent:
     def chat(self, message):
         if not self.llm:
             return "LLM 未正确配置"
+
+        # 获取对话历史 (Memory)
+        history = self.db.get_chat_history(self.chat_history_limit)
+        # 反转顺序，最新的在后面
+        history = list(reversed(history))
+
+        # 构建 RAG 上下文
         context = self.rag.retrieve(message)
         system_prompt = "你是一个专业的小红书运营助手。"
         if context:
             context_text = "\n".join([f"[{i+1}] {doc.content}" for i, doc in enumerate(context[:3])])
             system_prompt += f"\n\n参考知识:\n{context_text}"
-        messages = [{"role": "system", "content": system_prompt}, {"role": "user", "content": message}]
-        return self.llm.chat(messages)
+
+        # 构建消息列表: system + 历史对话 + 当前消息
+        messages = [{"role": "system", "content": system_prompt}]
+
+        # 添加历史对话
+        for msg in history:
+            messages.append({"role": msg["role"], "content": msg["content"]})
+
+        # 添加当前消息
+        messages.append({"role": "user", "content": message})
+
+        # 调用 LLM
+        response = self.llm.chat(messages)
+
+        # 保存对话到历史 (用户和AI的消息都保存)
+        self.db.add_message("user", message)
+        self.db.add_message("assistant", response)
+
+        return response
+
+    def clear_memory(self):
+        """清空对话历史"""
+        self.db.clear_chat_history()
+        return "对话历史已清空"
+
+    def get_memory_status(self):
+        """获取记忆状态"""
+        count = self.db.get_chat_history_count()
+        return {"history_count": count, "limit": self.chat_history_limit}
 
     def search(self, keyword, sort_by="最多点赞"):
         try:

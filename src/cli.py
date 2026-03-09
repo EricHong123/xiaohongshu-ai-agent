@@ -593,6 +593,8 @@ class XiaohongshuCLI:
             ("3", "🌐 配置 MCP 地址", self.config_mcp),
             ("4", "⚡ 配置权限", self.config_permissions),
             ("5", "📋 查看当前配置", self.show_config),
+            ("6", "🧠 查看对话历史", self.show_memory),
+            ("7", "🗑️ 清空对话历史", self.clear_memory),
             ("B", "🔙 返回主菜单", lambda: None),
         ]
 
@@ -612,6 +614,33 @@ class XiaohongshuCLI:
                 self.config_permissions()
             elif choice == '5':
                 self.show_config()
+            elif choice == '6':
+                self.show_memory()
+            elif choice == '7':
+                self.clear_memory()
+
+    def show_memory(self):
+        """显示对话历史"""
+        status = self.agent.get_memory_status()
+        print(f"\n{Colors.CYAN}🧠 对话历史{Colors.RESET}")
+        print(f"  当前记录: {status['history_count']} 条")
+        print(f"  保存上限: {status['limit']} 条")
+
+        history = self.agent.db.get_chat_history(20)
+        if history:
+            print(f"\n{Colors.CYAN}最近对话:{Colors.RESET}")
+            for i, msg in enumerate(history[-10:], 1):
+                role_icon = "👤" if msg["role"] == "user" else "🤖"
+                content = msg["content"][:80] + "..." if len(msg["content"]) > 80 else msg["content"]
+                print(f"  {role_icon} {msg['role']}: {content}")
+        else:
+            print(f"\n  暂无对话历史")
+
+    def clear_memory(self):
+        """清空对话历史"""
+        if confirm("确定要清空所有对话历史吗？"):
+            result = self.agent.clear_memory()
+            print_success(result)
 
     def quit(self):
         """退出"""
