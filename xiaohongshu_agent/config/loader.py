@@ -3,14 +3,14 @@
 """
 import os
 import json
-from typing import Any, Dict pathlib import Path
+from typing import Any, Dict, Optional
+from pathlib import Path
 
 
 class Config:
     """配置类"""
 
-    def __, Optional
-frominit__(self):
+    def __init__(self):
         self.config_file = Path.home() / ".xiaohongshu_agent" / "config.json"
         self.data: Dict[str, Any] = {}
         self._load()

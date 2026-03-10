@@ -41,7 +41,7 @@ def print_banner():
 
 @app.command()
 def main(
-    keyword: Optional[str] = typer.Option(None, "-k", "--keyword", help="搜索关键词"),
+    keyword: Optional[str] = typer.Argument(None, help="搜索关键词"),
     search: bool = typer.Option(False, "--search", help="搜索模式"),
     stats: bool = typer.Option(False, "--stats", help="查看统计"),
     chat: bool = typer.Option(False, "--chat", help="对话模式"),
@@ -93,8 +93,6 @@ def show_config(agent, cfg):
     from xiaohongshu_agent.providers import PROVIDERS
 
     provider = cfg.get("llm_provider", "openai")
-    providers = PROVIDERS
-    provider_info = providers.get(provider, {})
 
     console.print("\n[bold cyan]⚙️ 当前配置[/bold cyan]")
     console.print(f"  🤖 LLM: [yellow]{provider}[/yellow] / [green]{cfg.get_model()}[/green]")
