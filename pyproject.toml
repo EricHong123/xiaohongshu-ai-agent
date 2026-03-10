@@ -24,6 +24,8 @@ dependencies = [
     "anthropic>=0.25.0",
     "httpx>=0.28.0",
     "prompt-toolkit>=3.0.50",
+    "loguru>=0.7.0",
+    "requests>=2.31.0",
 ]
 
 [project.optional-dependencies]
