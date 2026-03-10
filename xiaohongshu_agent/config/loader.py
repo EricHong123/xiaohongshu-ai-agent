@@ -36,8 +36,8 @@ PROVIDERS_INFO = {
     "minimax": {
         "name": "Minimax",
         "env_key": "MINIMAX_API_KEY",
-        "models": ["abab6.5s-chat", "abab6.5-chat", "abab5.5s-chat", "abab5.5-chat"],
-        "default_model": "abab6.5s-chat",
+        "models": ["minimax-m2.5", "abab6.5s-chat", "abab6.5-chat", "abab5.5s-chat", "abab5.5-chat"],
+        "default_model": "minimax-m2.5",
     },
     "gemini": {
         "name": "Google Gemini",

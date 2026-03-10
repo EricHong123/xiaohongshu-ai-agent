@@ -59,6 +59,7 @@ PROVIDERS = {
         "name": "Minimax",
         "class": MinimaxProvider,
         "models": [
+            "minimax-m2.5",
             "abab6.5s-chat",
             "abab6.5-chat",
             "abab5.5s-chat",
