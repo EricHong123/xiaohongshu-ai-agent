@@ -3,736 +3,680 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>小红书 AI Agent</title>
+    <title>小红书 AI Agent - 马里奥版</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
         :root {
-            --primary: #ff2442;
-            --primary-light: #fff0f3;
+            --mario-red: #e3001b;
+            --mario-blue: #0099db;
+            --mario-green: #44cc44;
+            --mario-yellow: #ffcc00;
+            --mario-brown: #8b4513;
+            --mario-sky: #5c94fc;
+            --mario-cloud: #f0f8ff;
             --dark: #1a1a1a;
-            --gray: #f5f5f5;
-            --border: #e5e5e5;
         }
 
-        * {
-            box-sizing: border-box;
-        }
+        * { box-sizing: border-box; }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: var(--gray);
-            height: 100vh;
-            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(180deg, var(--mario-sky) 0%, var(--mario-cloud) 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
         }
 
-        /* 侧边栏 */
+        .mario-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .cloud {
+            position: absolute;
+            background: white;
+            border-radius: 50px;
+            opacity: 0.8;
+        }
+
+        .cloud::before, .cloud::after {
+            content: '';
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+        }
+
+        .cloud-1 { width: 100px; height: 40px; top: 8%; left: 8%; }
+        .cloud-1::before { width: 50px; height: 50px; top: -25px; left: 15px; }
+        .cloud-1::after { width: 35px; height: 35px; top: -15px; left: 50px; }
+
+        .cloud-2 { width: 80px; height: 30px; top: 15%; right: 12%; }
+        .cloud-2::before { width: 40px; height: 40px; top: -20px; left: 10px; }
+        .cloud-2::after { width: 30px; height: 30px; top: -12px; left: 40px; }
+
+        .ground {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 50px;
+            background: var(--mario-brown);
+            border-top: 8px solid #654321;
+        }
+
+        .ground::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 16px;
+            background: repeating-linear-gradient(90deg, var(--mario-green) 0px, var(--mario-green) 18px, #228b22 18px, #228b22 36px);
+        }
+
         .sidebar {
             width: 260px;
-            background: white;
-            border-right: 1px solid var(--border);
+            background: linear-gradient(180deg, var(--mario-blue) 0%, #0077b6 100%);
             display: flex;
             flex-direction: column;
             height: 100vh;
+            box-shadow: 4px 0 15px rgba(0,0,0,0.2);
+            position: relative;
+            z-index: 100;
         }
 
-        .sidebar-header {
-            padding: 20px;
-            border-bottom: 1px solid var(--border);
+        .sidebar::before {
+            content: '★';
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            color: var(--mario-yellow);
+            font-size: 24px;
         }
+
+        .sidebar-header { padding: 25px 20px; border-bottom: 3px solid rgba(255,255,255,0.2); }
 
         .logo {
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--dark);
+            font-size: 22px;
+            font-weight: 800;
+            color: white;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 12px;
+            text-shadow: 2px 2px 0 var(--mario-red);
         }
 
         .logo-icon {
-            width: 32px;
-            height: 32px;
-            background: var(--primary);
-            border-radius: 8px;
+            width: 45px;
+            height: 45px;
+            background: var(--mario-red);
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
-            font-size: 18px;
+            font-size: 24px;
+            border: 3px solid white;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
         }
 
-        .nav-menu {
-            flex: 1;
-            overflow-y: auto;
-            padding: 10px;
-        }
+        .logo-sub { font-size: 12px; color: var(--mario-yellow); margin-top: 5px; font-weight: 600; }
+
+        .nav-menu { flex: 1; overflow-y: auto; padding: 15px 10px; }
 
         .nav-item {
             display: flex;
             align-items: center;
             gap: 12px;
-            padding: 12px 16px;
-            border-radius: 8px;
-            color: #666;
+            padding: 14px 18px;
+            border-radius: 12px;
+            color: rgba(255,255,255,0.85);
             cursor: pointer;
             transition: all 0.2s;
-            margin-bottom: 4px;
+            margin-bottom: 8px;
+            font-weight: 500;
+            border: 2px solid transparent;
         }
 
         .nav-item:hover {
-            background: var(--gray);
+            background: rgba(255,255,255,0.15);
+            transform: translateX(5px);
         }
 
         .nav-item.active {
-            background: var(--primary-light);
-            color: var(--primary);
+            background: white;
+            color: var(--mario-blue);
+            border-color: var(--mario-yellow);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
         }
 
-        .nav-item i {
-            font-size: 18px;
-        }
+        .nav-item i { font-size: 20px; }
 
-        /* 主内容区 */
         .main-content {
             flex: 1;
             display: flex;
             flex-direction: column;
-            height: 100vh;
-            overflow: hidden;
-        }
-
-        /* 顶部栏 */
-        .topbar {
-            height: 60px;
-            background: white;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 20px;
-        }
-
-        .page-title {
-            font-size: 16px;
-            font-weight: 600;
-        }
-
-        .topbar-actions {
-            display: flex;
-            gap: 10px;
-        }
-
-        /* 聊天区域 */
-        .chat-container {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        .chat-messages {
-            flex: 1;
-            overflow-y: auto;
             padding: 20px;
+            overflow-y: auto;
         }
 
-        .message {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 20px;
-            animation: fadeIn 0.3s ease;
-        }
+        .page { display: none; animation: fadeIn 0.3s ease; }
+        .page.active { display: block; }
 
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
-        .message-avatar {
-            width: 36px;
-            height: 36px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 16px;
-            flex-shrink: 0;
-        }
-
-        .message-avatar.user {
-            background: var(--primary);
-            color: white;
-        }
-
-        .message-avatar.ai {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-
-        .message-content {
-            flex: 1;
-            max-width: 70%;
-        }
-
-        .message-bubble {
-            padding: 12px 16px;
-            border-radius: 12px;
-            line-height: 1.5;
-            white-space: pre-wrap;
-        }
-
-        .message.user .message-bubble {
-            background: var(--primary);
-            color: white;
-            border-top-right-radius: 4px;
-        }
-
-        .message.ai .message-bubble {
-            background: white;
-            border: 1px solid var(--border);
-            border-top-left-radius: 4px;
-        }
-
-        /* 输入区 */
-        .chat-input-area {
-            padding: 16px 20px;
-            background: white;
-            border-top: 1px solid var(--border);
-        }
-
-        .chat-input-wrapper {
-            display: flex;
-            gap: 10px;
-            background: var(--gray);
-            border-radius: 12px;
-            padding: 8px;
-        }
-
-        .chat-input {
-            flex: 1;
-            border: none;
-            background: transparent;
-            padding: 8px 12px;
-            font-size: 14px;
-            outline: none;
-        }
-
-        .chat-input::placeholder {
-            color: #999;
-        }
-
-        .send-btn {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 8px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 14px;
-            transition: opacity 0.2s;
-        }
-
-        .send-btn:hover {
-            opacity: 0.9;
-        }
-
-        .send-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        /* 功能页面 */
-        .page {
-            display: none;
-            height: 100%;
-            overflow-y: auto;
-        }
-
-        .page.active {
-            display: block;
-        }
-
-        .page-content {
-            padding: 20px;
-        }
-
         .card {
             background: white;
-            border-radius: 12px;
-            border: 1px solid var(--border);
-            margin-bottom: 16px;
+            border-radius: 16px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+            border: none;
         }
 
         .card-header {
-            padding: 16px 20px;
-            border-bottom: 1px solid var(--border);
-            font-weight: 600;
-        }
-
-        .card-body {
-            padding: 20px;
-        }
-
-        /* 搜索结果 */
-        .search-result {
-            display: flex;
-            gap: 12px;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 8px;
-            background: var(--gray);
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .search-result:hover {
-            background: #eee;
-        }
-
-        .search-result-title {
-            font-weight: 500;
-            margin-bottom: 4px;
-        }
-
-        .search-result-stats {
-            font-size: 12px;
-            color: #666;
-        }
-
-        /* 设置表单 */
-        .form-group {
-            margin-bottom: 16px;
-        }
-
-        .form-label {
-            display: block;
-            margin-bottom: 6px;
-            font-weight: 500;
-            font-size: 14px;
-        }
-
-        .form-control {
-            width: 100%;
-            padding: 10px 14px;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            font-size: 14px;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-
-        .form-control:focus {
-            border-color: var(--primary);
-        }
-
-        select.form-control {
-            cursor: pointer;
-        }
-
-        /* 统计卡片 */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 16px;
-        }
-
-        .stat-card {
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            text-align: center;
-            border: 1px solid var(--border);
-        }
-
-        .stat-value {
-            font-size: 28px;
+            background: linear-gradient(90deg, var(--mario-red) 0%, #ff4444 100%);
+            color: white;
+            padding: 18px 25px;
             font-weight: 700;
-            color: var(--primary);
-        }
-
-        .stat-label {
-            font-size: 13px;
-            color: #666;
-            margin-top: 4px;
-        }
-
-        /* 加载动画 */
-        .loading {
+            font-size: 18px;
+            border: none;
             display: flex;
             align-items: center;
-            gap: 8px;
-            color: #999;
-            padding: 10px;
+            gap: 10px;
         }
 
-        .spinner {
-            width: 16px;
-            height: 16px;
-            border: 2px solid #eee;
-            border-top-color: var(--primary);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
+        .card-body { padding: 25px; }
 
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        /* Toast 提示 */
-        .toast-container {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 9999;
-        }
-
-        .toast {
-            background: white;
-            padding: 12px 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            margin-bottom: 8px;
-            animation: slideIn 0.3s ease;
-        }
-
-        @keyframes slideIn {
-            from { transform: translateX(100%); }
-            to { transform: translateX(0); }
-        }
-
-        .toast.success { border-left: 4px solid #28a745; }
-        .toast.error { border-left: 4px solid #dc3545; }
-        .toast.info { border-left: 4px solid #17a2b8; }
-
-        /* 对话历史 */
-        .history-item {
-            padding: 10px 12px;
-            border-radius: 8px;
-            cursor: pointer;
-            margin-bottom: 4px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .history-item:hover {
-            background: var(--gray);
-        }
-
-        /* 图标按钮 */
-        .icon-btn {
-            background: none;
+        .btn-mario {
+            background: linear-gradient(180deg, var(--mario-red) 0%, #c40017 100%);
+            color: white;
             border: none;
-            padding: 8px;
-            border-radius: 8px;
+            padding: 12px 28px;
+            border-radius: 25px;
+            font-weight: 700;
+            font-size: 16px;
             cursor: pointer;
-            color: #666;
+            transition: all 0.2s;
+            box-shadow: 0 4px 0 #8b0000, 0 6px 10px rgba(0,0,0,0.2);
+            border: 2px solid white;
+        }
+
+        .btn-mario:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 0 #8b0000, 0 10px 20px rgba(0,0,0,0.25);
+        }
+
+        .btn-mario:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #8b0000, 0 3px 5px rgba(0,0,0,0.2);
+        }
+
+        .btn-mario-blue {
+            background: linear-gradient(180deg, var(--mario-blue) 0%, #0066aa 100%);
+            box-shadow: 0 4px 0 #004466, 0 6px 10px rgba(0,0,0,0.2);
+        }
+
+        .btn-mario-green {
+            background: linear-gradient(180deg, var(--mario-green) 0%, #228822 100%);
+            box-shadow: 0 4px 0 #116611, 0 6px 10px rgba(0,0,0,0.2);
+        }
+
+        .form-control, .form-select {
+            border: 3px solid #ddd;
+            border-radius: 12px;
+            padding: 12px 18px;
+            font-size: 15px;
             transition: all 0.2s;
         }
 
-        .icon-btn:hover {
-            background: var(--gray);
-            color: var(--primary);
+        .form-control:focus, .form-select:focus {
+            border-color: var(--mario-blue);
+            box-shadow: 0 0 0 4px rgba(0, 153, 219, 0.2);
         }
 
-        /* 发布表单 */
-        .publish-form {
-            background: white;
+        .chat-container {
+            height: 400px;
+            overflow-y: auto;
             padding: 20px;
+            background: #f8f9fa;
             border-radius: 12px;
+            margin-bottom: 20px;
         }
 
-        .image-preview {
+        .message { display: flex; margin-bottom: 15px; animation: slideIn 0.3s ease; }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
+        .message.user { flex-direction: row-reverse; }
+
+        .message-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
             display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-top: 10px;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            flex-shrink: 0;
         }
 
-        .image-preview-item {
-            width: 80px;
-            height: 80px;
-            border-radius: 8px;
-            object-fit: cover;
-            background: var(--gray);
+        .message.user .message-avatar { background: var(--mario-red); color: white; margin-left: 12px; }
+        .message.assistant .message-avatar { background: var(--mario-blue); color: white; margin-right: 12px; }
+
+        .message-content {
+            max-width: 70%;
+            padding: 14px 18px;
+            border-radius: 18px;
+            line-height: 1.6;
         }
 
-        /* 响应式 */
+        .message.user .message-content {
+            background: var(--mario-red);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.assistant .message-content {
+            background: white;
+            color: var(--dark);
+            border: 2px solid #eee;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .chat-input-container { display: flex; gap: 12px; }
+        .chat-input { flex: 1; }
+
+        .post-card {
+            background: white;
+            border-radius: 12px;
+            padding: 18px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            border-left: 4px solid var(--mario-red);
+            transition: all 0.2s;
+        }
+
+        .post-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+        }
+
+        .post-title { font-weight: 700; font-size: 16px; margin-bottom: 10px; color: var(--dark); }
+
+        .post-stats { display: flex; gap: 20px; color: #666; font-size: 14px; }
+        .post-stats span { display: flex; align-items: center; gap: 5px; }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px; }
+
+        .stat-card {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            border-bottom: 4px solid;
+            transition: all 0.2s;
+        }
+
+        .stat-card:hover { transform: translateY(-5px); }
+        .stat-card.red { border-color: var(--mario-red); }
+        .stat-card.blue { border-color: var(--mario-blue); }
+        .stat-card.green { border-color: var(--mario-green); }
+        .stat-card.yellow { border-color: var(--mario-yellow); }
+
+        .stat-icon { font-size: 36px; margin-bottom: 10px; }
+        .stat-value { font-size: 32px; font-weight: 800; color: var(--dark); }
+        .stat-label { font-size: 14px; color: #666; margin-top: 5px; }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .status-badge.success { background: #d4edda; color: #155724; }
+        .status-badge.warning { background: #fff3cd; color: #856404; }
+        .status-badge.error { background: #f8d7da; color: #721c24; }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .status-badge.success .status-dot { background: #28a745; }
+        .status-badge.warning .status-dot { background: #ffc107; }
+        .status-badge.error .status-dot { background: #dc3545; }
+
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+        .tag {
+            display: inline-block;
+            background: var(--mario-blue);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            margin-right: 8px;
+            margin-bottom: 8px;
+        }
+
+        .memory-item { padding: 15px; border-bottom: 1px solid #eee; }
+        .memory-item:last-child { border-bottom: none; }
+        .memory-role { font-weight: 700; font-size: 12px; text-transform: uppercase; margin-bottom: 5px; }
+        .memory-role.user { color: var(--mario-red); }
+        .memory-role.assistant { color: var(--mario-blue); }
+
+        .qrcode-container { text-align: center; padding: 30px; background: #f8f9fa; border-radius: 12px; }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: var(--mario-blue); border-radius: 4px; }
+
         @media (max-width: 768px) {
-            .sidebar {
-                width: 60px;
-            }
-            .nav-item span {
-                display: none;
-            }
-            .nav-item {
-                justify-content: center;
-            }
-            .message-content {
-                max-width: 85%;
-            }
+            .sidebar { width: 80px; }
+            .logo span, .logo-sub { display: none; }
+            .nav-item span { display: none; }
+            .nav-item { justify-content: center; padding: 14px; }
         }
     </style>
 </head>
 <body>
-    <div class="d-flex">
-        <!-- 侧边栏 -->
+    <div class="mario-bg">
+        <div class="cloud cloud-1"></div>
+        <div class="cloud cloud-2"></div>
+    </div>
+    <div class="ground"></div>
+
+    <div class="d-flex" style="min-height: 100vh; padding-bottom: 50px;">
         <div class="sidebar">
             <div class="sidebar-header">
                 <div class="logo">
-                    <div class="logo-icon">📕</div>
-                    <span>小红书 Agent</span>
+                    <div class="logo-icon">🎮</div>
+                    <div>
+                        <span>小红书 AI</span>
+                        <div class="logo-sub">马里奥版</div>
+                    </div>
                 </div>
             </div>
 
             <div class="nav-menu">
-                <div class="nav-item active" data-page="chat">
-                    <i class="bi bi-chat-dots"></i>
-                    <span>AI 对话</span>
-                </div>
-                <div class="nav-item" data-page="search">
-                    <i class="bi bi-search"></i>
-                    <span>搜索</span>
-                </div>
-                <div class="nav-item" data-page="publish">
-                    <i class="bi bi-send"></i>
-                    <span>发布笔记</span>
-                </div>
-                <div class="nav-item" data-page="stats">
-                    <i class="bi bi-bar-chart"></i>
-                    <span>数据统计</span>
-                </div>
-                <div class="nav-item" data-page="memory">
-                    <i class="bi bi-clock-history"></i>
-                    <span>对话历史</span>
-                </div>
-                <div class="nav-item" data-page="settings">
-                    <i class="bi bi-gear"></i>
-                    <span>设置</span>
-                </div>
+                <div class="nav-item active" data-page="chat"><i class="bi bi-chat-dots"></i><span>🤖 AI 对话</span></div>
+                <div class="nav-item" data-page="search"><i class="bi bi-search"></i><span>🔍 搜索帖子</span></div>
+                <div class="nav-item" data-page="publish"><i class="bi bi-send"></i><span>📝 发布笔记</span></div>
+                <div class="nav-item" data-page="generate"><i class="bi bi-magic"></i><span>✨ AI 生成</span></div>
+                <div class="nav-item" data-page="stats"><i class="bi bi-bar-chart"></i><span>📊 数据统计</span></div>
+                <div class="nav-item" data-page="memory"><i class="bi bi-clock-history"></i><span>🧠 对话记忆</span></div>
+                <div class="nav-item" data-page="login"><i class="bi bi-qr-code"></i><span>🔐 登录状态</span></div>
+                <div class="nav-item" data-page="settings"><i class="bi bi-gear"></i><span>⚙️ 系统设置</span></div>
             </div>
 
-            <div style="padding: 10px; border-top: 1px solid var(--border);">
-                <div class="nav-item" id="initAgent">
-                    <i class="bi bi-play-circle"></i>
-                    <span>初始化 Agent</span>
+            <div style="padding: 15px; border-top: 2px solid rgba(255,255,255,0.2);">
+                <div class="status-badge" id="connectionStatus">
+                    <span class="status-dot"></span>
+                    <span id="statusText">初始化中...</span>
                 </div>
             </div>
         </div>
 
-        <!-- 主内容区 -->
         <div class="main-content">
-            <!-- AI 对话页面 -->
-            <div id="page-chat" class="page active">
-                <div class="chat-container">
-                    <div class="chat-messages" id="chatMessages">
-                        <div class="message ai">
-                            <div class="message-avatar ai">🤖</div>
-                            <div class="message-content">
-                                <div class="message-bubble">你好！我是小红书 AI Agent，可以帮你完成内容创作、搜索发布等功能。有什么可以帮你的吗？</div>
+            <!-- AI 对话 -->
+            <div class="page active" id="page-chat">
+                <div class="card">
+                    <div class="card-header"><i class="bi bi-chat-dots"></i> AI 对话</div>
+                    <div class="card-body">
+                        <div class="chat-container" id="chatContainer">
+                            <div class="message assistant">
+                                <div class="message-avatar">🤖</div>
+                                <div class="message-content">
+                                    你好！我是小红书 AI 助手 🎮<br>
+                                    可以帮你：<br>
+                                    • 策划内容策略<br>• 分析热门笔记<br>• 优化账号运营<br><br>
+                                    有什么想问的尽管说！
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="chat-input-area">
-                        <div class="chat-input-wrapper">
-                            <input type="text" class="chat-input" id="chatInput" placeholder="输入消息..." onkeypress="handleChatKeypress(event)">
-                            <button class="send-btn" id="sendBtn" onclick="sendMessage()">
-                                <i class="bi bi-send"></i>
-                                发送
-                            </button>
+                        <div class="chat-input-container">
+                            <input type="text" class="form-control chat-input" id="chatInput" placeholder="输入你的问题..." onkeypress="if(event.key==='Enter')sendMessage()">
+                            <button class="btn btn-mario" onclick="sendMessage()">发送</button>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- 搜索页面 -->
-            <div id="page-search" class="page">
-                <div class="page-content">
-                    <div class="card">
-                        <div class="card-header">
-                            <i class="bi bi-search"></i> 搜索热门帖子
-                        </div>
-                        <div class="card-body">
-                            <div class="form-group">
+            <!-- 搜索 -->
+            <div class="page" id="page-search">
+                <div class="card">
+                    <div class="card-header"><i class="bi bi-search"></i> 搜索热门帖子</div>
+                    <div class="card-body">
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-8">
                                 <input type="text" class="form-control" id="searchKeyword" placeholder="输入搜索关键词...">
                             </div>
-                            <button class="btn btn-primary" onclick="doSearch()">
-                                <i class="bi bi-search"></i> 搜索
-                            </button>
+                            <div class="col-md-4">
+                                <select class="form-select" id="searchSort">
+                                    <option value="最多点赞">最多点赞</option>
+                                    <option value="最新">最新</option>
+                                    <option value="最多评论">最多评论</option>
+                                </select>
+                            </div>
                         </div>
-                    </div>
-                    <div id="searchResults"></div>
-                </div>
-            </div>
-
-            <!-- 发布页面 -->
-            <div id="page-publish" class="page">
-                <div class="page-content">
-                    <div class="publish-form">
-                        <div class="form-group">
-                            <label class="form-label">笔记主题</label>
-                            <input type="text" class="form-control" id="publishKeyword" placeholder="输入主题关键词，AI 将自动生成内容">
-                        </div>
-                        <button class="btn btn-outline-primary mb-3" onclick="generateContent()">
-                            <i class="bi bi-magic"></i> AI 生成内容
-                        </button>
-
-                        <div id="generatedContent" style="display: none;">
-                            <div class="form-group">
-                                <label class="form-label">标题</label>
-                                <input type="text" class="form-control" id="publishTitle">
+                        <button class="btn btn-mario mb-4" onclick="doSearch()"><i class="bi bi-search me-2"></i>搜索</button>
+                        <div id="searchResults">
+                            <div class="text-center text-muted py-5">
+                                <i class="bi bi-search" style="font-size: 48px;"></i>
+                                <p class="mt-3">输入关键词开始搜索</p>
                             </div>
-                            <div class="form-group">
-                                <label class="form-label">正文内容</label>
-                                <textarea class="form-control" id="publishContent" rows="5"></textarea>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">标签 (用逗号分隔)</label>
-                                <input type="text" class="form-control" id="publishTags">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">图片 (每行一个路径)</label>
-                                <textarea class="form-control" id="publishImages" rows="3" placeholder="/path/to/image1.jpg&#10;/path/to/image2.jpg"></textarea>
-                            </div>
-                            <button class="btn btn-success" onclick="doPublish()">
-                                <i class="bi bi-send"></i> 发布笔记
-                            </button>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- 统计页面 -->
-            <div id="page-stats" class="page">
-                <div class="page-content">
-                    <div class="stats-grid" id="statsGrid">
-                        <div class="stat-card">
-                            <div class="stat-value" id="statPosts">-</div>
-                            <div class="stat-label">已发布笔记</div>
+            <!-- 发布 -->
+            <div class="page" id="page-publish">
+                <div class="card">
+                    <div class="card-header"><i class="bi bi-send"></i> 发布笔记</div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">标题</label>
+                            <input type="text" class="form-control" id="publishTitle" placeholder="输入笔记标题...">
                         </div>
-                        <div class="stat-card">
-                            <div class="stat-value" id="statLikes">-</div>
-                            <div class="stat-label">总点赞数</div>
+                        <div class="mb-3">
+                            <label class="form-label">正文内容</label>
+                            <textarea class="form-control" id="publishContent" rows="6" placeholder="输入笔记正文..."></textarea>
                         </div>
-                        <div class="stat-card">
-                            <div class="stat-value" id="statComments">-</div>
-                            <div class="stat-label">总评论数</div>
+                        <div class="mb-3">
+                            <label class="form-label">图片路径（用逗号分隔）</label>
+                            <input type="text" class="form-control" id="publishImages" placeholder="/path/to/image1.jpg, /path/to/image2.jpg">
                         </div>
-                        <div class="stat-card">
-                            <div class="stat-value" id="statReplied">-</div>
-                            <div class="stat-label">已回复评论</div>
+                        <div class="mb-3">
+                            <label class="form-label">标签（用逗号分隔）</label>
+                            <input type="text" class="form-control" id="publishTags" placeholder="AI, 科技, 干货">
                         </div>
+                        <button class="btn btn-mario" onclick="doPublish()"><i class="bi bi-send me-2"></i>发布</button>
                     </div>
-                    <button class="btn btn-outline-primary mt-3" onclick="loadStats()">
-                        <i class="bi bi-arrow-clockwise"></i> 刷新统计
-                    </button>
                 </div>
             </div>
 
-            <!-- 对话历史页面 -->
-            <div id="page-memory" class="page">
-                <div class="page-content">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5>对话历史</h5>
-                        <button class="btn btn-outline-danger btn-sm" onclick="clearMemory()">
-                            <i class="bi bi-trash"></i> 清空历史
-                        </button>
+            <!-- AI 生成 -->
+            <div class="page" id="page-generate">
+                <div class="card">
+                    <div class="card-header"><i class="bi bi-magic"></i> AI 内容生成</div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">生成主题</label>
+                            <input type="text" class="form-control" id="generateKeyword" placeholder="输入你想要生成的内容主题...">
+                        </div>
+                        <button class="btn btn-mario mb-4" onclick="doGenerate()"><i class="bi bi-stars me-2"></i>生成内容</button>
+                        <div id="generateResult" style="display: none;">
+                            <div class="card" style="background: #f8f9fa;">
+                                <div class="card-body">
+                                    <h5 class="card-title mb-3" id="generatedTitle"></h5>
+                                    <p class="card-text mb-3" id="generatedContent"></p>
+                                    <div class="mb-3" id="generatedTags"></div>
+                                    <button class="btn btn-mario-green" onclick="useGenerated()"><i class="bi bi-check2 me-2"></i>使用此内容</button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div id="memoryList"></div>
                 </div>
             </div>
 
-            <!-- 设置页面 -->
-            <div id="page-settings" class="page">
-                <div class="page-content">
-                    <div class="card">
-                        <div class="card-header">
-                            <i class="bi bi-gear"></i> LLM 配置
+            <!-- 统计 -->
+            <div class="page" id="page-stats">
+                <div class="card">
+                    <div class="card-header"><i class="bi bi-bar-chart"></i> 数据统计</div>
+                    <div class="card-body">
+                        <div class="stats-grid">
+                            <div class="stat-card red">
+                                <div class="stat-icon">📝</div>
+                                <div class="stat-value" id="statPublished">0</div>
+                                <div class="stat-label">已发布笔记</div>
+                            </div>
+                            <div class="stat-card blue">
+                                <div class="stat-icon">👍</div>
+                                <div class="stat-value" id="statLikes">0</div>
+                                <div class="stat-label">总点赞数</div>
+                            </div>
+                            <div class="stat-card green">
+                                <div class="stat-icon">💬</div>
+                                <div class="stat-value" id="statComments">0</div>
+                                <div class="stat-label">总评论数</div>
+                            </div>
+                            <div class="stat-card yellow">
+                                <div class="stat-icon">✅</div>
+                                <div class="stat-value" id="statReplied">0</div>
+                                <div class="stat-label">已回复评论</div>
+                            </div>
                         </div>
-                        <div class="card-body">
-                            <div class="form-group">
-                                <label class="form-label">LLM 提供商</label>
-                                <select class="form-control" id="configProvider" onchange="updateModels()"></select>
+                        <button class="btn btn-mario-blue mt-4" onclick="loadStats()"><i class="bi bi-arrow-clockwise me-2"></i>刷新统计</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 记忆 -->
+            <div class="page" id="page-memory">
+                <div class="card">
+                    <div class="card-header"><i class="bi bi-clock-history"></i> 对话记忆</div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span id="memoryCount">0 条对话历史</span>
+                            <button class="btn btn-mario" onclick="clearMemory()"><i class="bi bi-trash me-2"></i>清空记忆</button>
+                        </div>
+                        <div id="memoryList">
+                            <div class="text-center text-muted py-5">
+                                <i class="bi bi-clock-history" style="font-size: 48px;"></i>
+                                <p class="mt-3">暂无对话历史</p>
                             </div>
-                            <div class="form-group">
-                                <label class="form-label">模型</label>
-                                <select class="form-control" id="configModel"></select>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">API Key</label>
-                                <input type="password" class="form-control" id="configApiKey" placeholder="输入 API Key">
-                            </div>
-                            <button class="btn btn-primary" onclick="saveConfig()">
-                                <i class="bi bi-check-lg"></i> 保存配置
-                            </button>
                         </div>
                     </div>
+                </div>
+            </div>
 
-                    <div class="card">
-                        <div class="card-header">
-                            <i class="bi bi-link"></i> MCP 配置
-                        </div>
-                        <div class="card-body">
-                            <div class="form-group">
-                                <label class="form-label">MCP 地址</label>
-                                <input type="text" class="form-control" id="configMcp" placeholder="http://localhost:18060/mcp">
+            <!-- 登录 -->
+            <div class="page" id="page-login">
+                <div class="card">
+                    <div class="card-header"><i class="bi bi-qr-code"></i> 小红书登录</div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <h5 class="mb-3">🔗 MCP 连接状态</h5>
+                                <div class="status-badge mb-3" id="mcpStatus">
+                                    <span class="status-dot"></span>
+                                    <span id="mcpStatusText">检查中...</span>
+                                </div>
+                                <button class="btn btn-mario-blue mb-4" onclick="checkMcpStatus()"><i class="bi bi-arrow-clockwise me-2"></i>刷新状态</button>
+
+                                <h5 class="mb-3">👤 小红书登录状态</h5>
+                                <div class="status-badge mb-3" id="loginStatus">
+                                    <span class="status-dot"></span>
+                                    <span id="loginStatusText">检查中...</span>
+                                </div>
+                                <button class="btn btn-mario mb-3" onclick="checkLogin()"><i class="bi bi-arrow-clockwise me-2"></i>检查登录</button>
                             </div>
-                            <button class="btn btn-primary" onclick="saveMcpConfig()">
-                                <i class="bi bi-check-lg"></i> 保存
-                            </button>
+                            <div class="col-md-6">
+                                <h5 class="mb-3">📱 获取登录二维码</h5>
+                                <div class="qrcode-container">
+                                    <div id="qrcodeArea">
+                                        <p class="text-muted">点击下方按钮获取二维码</p>
+                                    </div>
+                                    <button class="btn btn-mario mt-3" onclick="getQrcode()"><i class="bi bi-qr-code me-2"></i>获取二维码</button>
+                                </div>
+                            </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 设置 -->
+            <div class="page" id="page-settings">
+                <div class="card">
+                    <div class="card-header"><i class="bi bi-gear"></i> 系统设置</div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">LLM 提供商</label>
+                            <select class="form-select" id="configProvider" onchange="loadModels()"></select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">模型</label>
+                            <select class="form-select" id="configModel"></select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">API Key</label>
+                            <input type="password" class="form-control" id="configApiKey" placeholder="输入 API Key...">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">MCP 地址</label>
+                            <input type="text" class="form-control" id="configMcpUrl" placeholder="http://localhost:18060/mcp">
+                        </div>
+                        <button class="btn btn-mario" onclick="saveConfig()"><i class="bi bi-check2 me-2"></i>保存配置</button>
+                        <button class="btn btn-mario-blue ms-2" onclick="initAgent()"><i class="bi bi-arrow-clockwise me-2"></i>重新初始化</button>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Toast 容器 -->
-    <div class="toast-container" id="toastContainer"></div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        let configData = null;
+        let generatedData = null;
 
-        // 页面导航
-        document.querySelectorAll('.nav-item[data-page]').forEach(item => {
-            item.addEventListener('click', () => {
-                const page = item.dataset.page;
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const page = this.dataset.page;
                 showPage(page);
             });
         });
 
         function showPage(pageId) {
-            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-            document.querySelector(`.nav-item[data-page="${pageId}"]`)?.classList.add('active');
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            document.querySelector(`[data-page="${pageId}"]`).classList.add('active');
+            document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
             document.getElementById(`page-${pageId}`).classList.add('active');
 
-            // 加载对应页面数据
             if (pageId === 'stats') loadStats();
             if (pageId === 'memory') loadMemory();
+            if (pageId === 'login') { checkMcpStatus(); checkLogin(); }
             if (pageId === 'settings') loadConfig();
         }
 
-        // Toast 提示
-        function showToast(message, type = 'info') {
-            const container = document.getElementById('toastContainer');
-            const toast = document.createElement('div');
-            toast.className = `toast ${type}`;
-            toast.textContent = message;
-            container.appendChild(toast);
-            setTimeout(() => toast.remove(), 3000);
-        }
-
-        // Chat 功能
-        function handleChatKeypress(e) {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                sendMessage();
+        async function apiCall(url, options = {}) {
+            try {
+                const response = await fetch(url, { ...options, headers: { 'Content-Type': 'application/json', ...options.headers } });
+                return await response.json();
+            } catch (error) {
+                console.error('API Error:', error);
+                return { success: false, error: error.message };
             }
         }
 
@@ -740,340 +684,170 @@
             const input = document.getElementById('chatInput');
             const message = input.value.trim();
             if (!message) return;
-
-            // 添加用户消息
             addMessage('user', message);
             input.value = '';
-
-            // 显示加载
-            const loadingId = addLoading();
-
-            try {
-                const res = await fetch('/api/chat', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({message})
-                });
-                const data = await res.json();
-
-                document.getElementById(loadingId)?.remove();
-
-                if (data.success) {
-                    addMessage('ai', data.response);
-                } else {
-                    showToast(data.error || '请求失败', 'error');
-                }
-            } catch (e) {
-                document.getElementById(loadingId)?.remove();
-                showToast('网络错误', 'error');
-            }
+            const loadingMsg = addMessage('assistant', '💭 思考中...');
+            const result = await apiCall('/api/chat', { method: 'POST', body: JSON.stringify({ message }) });
+            loadingMsg.remove();
+            if (result.success) addMessage('assistant', result.response);
+            else addMessage('assistant', '❌ ' + (result.error || '请求失败'));
         }
 
         function addMessage(role, content) {
-            const container = document.getElementById('chatMessages');
+            const container = document.getElementById('chatContainer');
             const div = document.createElement('div');
             div.className = `message ${role}`;
-            div.innerHTML = `
-                <div class="message-avatar ${role}">${role === 'user' ? '👤' : '🤖'}</div>
-                <div class="message-content">
-                    <div class="message-bubble">${escapeHtml(content)}</div>
-                </div>
-            `;
+            div.innerHTML = `<div class="message-avatar">${role === 'user' ? '👤' : '🤖'}</div><div class="message-content">${content.replace(/\n/g, '<br>')}</div>`;
             container.appendChild(div);
             container.scrollTop = container.scrollHeight;
+            return div;
         }
 
-        function addLoading() {
-            const id = 'loading-' + Date.now();
-            const container = document.getElementById('chatMessages');
-            const div = document.createElement('div');
-            div.id = id;
-            div.className = 'message ai';
-            div.innerHTML = `
-                <div class="message-avatar ai">🤖</div>
-                <div class="message-content">
-                    <div class="message-bubble"><div class="loading"><div class="spinner"></div>AI 思考中...</div>
-                </div>
-            `;
-            container.appendChild(div);
-            container.scrollTop = container.scrollHeight;
-            return id;
-        }
-
-        // 搜索功能
         async function doSearch() {
             const keyword = document.getElementById('searchKeyword').value.trim();
-            if (!keyword) {
-                showToast('请输入关键词', 'error');
-                return;
-            }
-
-            const btn = event.target;
-            btn.disabled = true;
-            btn.innerHTML = '<span class="spinner"></span> 搜索中...';
-
-            try {
-                const res = await fetch('/api/search', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({keyword})
-                });
-                const data = await res.json();
-
-                if (data.success) {
-                    showSearchResults(data.posts);
-                } else {
-                    showToast(data.error || '搜索失败', 'error');
-                }
-            } catch (e) {
-                showToast('网络错误', 'error');
-            }
-
-            btn.disabled = false;
-            btn.innerHTML = '<i class="bi bi-search"></i> 搜索';
-        }
-
-        function showSearchResults(posts) {
-            const container = document.getElementById('searchResults');
-            if (!posts || posts.length === 0) {
-                container.innerHTML = '<div class="text-center text-muted">未找到相关帖子</div>';
-                return;
-            }
-
-            container.innerHTML = posts.map(p => `
-                <div class="search-result">
-                    <div class="flex-grow-1">
-                        <div class="search-result-title">${escapeHtml(p.title || '无标题')}</div>
-                        <div class="search-result-stats">
-                            👍 ${p.likes || 0}  💬 ${p.comments || 0}  ⭐ ${p.collects || 0}
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        // 发布功能
-        async function generateContent() {
-            const keyword = document.getElementById('publishKeyword').value.trim();
-            if (!keyword) {
-                showToast('请输入主题', 'error');
-                return;
-            }
-
-            try {
-                const res = await fetch('/api/generate', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({keyword})
-                });
-                const data = await res.json();
-
-                if (data.success) {
-                    document.getElementById('publishTitle').value = data.content.title || '';
-                    document.getElementById('publishContent').value = data.content.content || '';
-                    document.getElementById('publishTags').value = (data.content.tags || []).join(', ');
-                    document.getElementById('generatedContent').style.display = 'block';
-                    showToast('内容生成成功', 'success');
-                } else {
-                    showToast(data.error || '生成失败', 'error');
-                }
-            } catch (e) {
-                showToast('网络错误', 'error');
+            if (!keyword) return alert('请输入搜索关键词');
+            const resultsDiv = document.getElementById('searchResults');
+            resultsDiv.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary"></div></div>';
+            const result = await apiCall('/api/search', { method: 'POST', body: JSON.stringify({ keyword }) });
+            if (result.success && result.posts && result.posts.length > 0) {
+                resultsDiv.innerHTML = result.posts.map(post => `<div class="post-card"><div class="post-title">${post.title || '无标题'}</div><div class="post-stats"><span>👍 ${post.likes || 0}</span><span>💬 ${post.comments || 0}</span><span>⭐ ${post.collects || 0}</span></div></div>`).join('');
+            } else {
+                resultsDiv.innerHTML = `<div class="text-center text-muted py-5"><i class="bi bi-emoji-frown" style="font-size: 48px;"></i><p class="mt-3">${result.error || '未找到相关笔记，可能需要先登录小红书'}</p></div>`;
             }
         }
 
         async function doPublish() {
-            const title = document.getElementById('publishTitle').value;
-            const content = document.getElementById('publishContent').value;
-            const tagsStr = document.getElementById('publishTags').value;
-            const imagesStr = document.getElementById('publishImages').value;
-
-            const images = imagesStr.split('\n').map(s => s.trim()).filter(s => s);
-            const tags = tagsStr.split(',').map(s => s.trim()).filter(s => s);
-
-            if (!images.length) {
-                showToast('请至少添加一张图片', 'error');
-                return;
-            }
-
-            try {
-                const res = await fetch('/api/publish', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({title, content, images, tags})
-                });
-                const data = await res.json();
-
-                if (data.success) {
-                    showToast('发布成功!', 'success');
-                } else {
-                    showToast(data.error || '发布失败', 'error');
-                }
-            } catch (e) {
-                showToast('网络错误', 'error');
-            }
+            const title = document.getElementById('publishTitle').value.trim();
+            const content = document.getElementById('publishContent').value.trim();
+            const images = document.getElementById('publishImages').value.split(',').map(s => s.trim()).filter(s => s);
+            const tags = document.getElementById('publishTags').value.split(',').map(s => s.trim()).filter(s => s);
+            if (!images.length) return alert('请至少添加一张图片');
+            const result = await apiCall('/api/publish', { method: 'POST', body: JSON.stringify({ title, content, images, tags }) });
+            if (result.success) { alert('✅ 发布成功！'); document.getElementById('publishTitle').value = ''; document.getElementById('publishContent').value = ''; document.getElementById('publishImages').value = ''; document.getElementById('publishTags').value = ''; }
+            else alert('❌ 发布失败：' + (result.error || '请检查登录状态'));
         }
 
-        // 统计功能
+        async function doGenerate() {
+            const keyword = document.getElementById('generateKeyword').value.trim();
+            if (!keyword) return alert('请输入生成主题');
+            const result = await apiCall('/api/generate', { method: 'POST', body: JSON.stringify({ keyword }) });
+            if (result.success && result.content) {
+                generatedData = result.content;
+                document.getElementById('generateResult').style.display = 'block';
+                document.getElementById('generatedTitle').textContent = result.content.title || '';
+                document.getElementById('generatedContent').textContent = result.content.content || '';
+                document.getElementById('generatedTags').innerHTML = (result.content.tags || []).map(t => `<span class="tag">#${t}</span>`).join('');
+            } else alert('❌ 生成失败：' + (result.error || '请检查 MCP 连接'));
+        }
+
+        function useGenerated() {
+            if (!generatedData) return;
+            document.getElementById('publishTitle').value = generatedData.title || '';
+            document.getElementById('publishContent').value = generatedData.content || '';
+            document.getElementById('publishTags').value = (generatedData.tags || []).join(', ');
+            showPage('publish');
+        }
+
         async function loadStats() {
-            try {
-                const res = await fetch('/api/stats');
-                const data = await res.json();
-
-                if (data.success) {
-                    const s = data.stats;
-                    document.getElementById('statPosts').textContent = s.published_posts || 0;
-                    document.getElementById('statLikes').textContent = s.total_likes || 0;
-                    document.getElementById('statComments').textContent = s.total_comments || 0;
-                    document.getElementById('statReplied').textContent = s.replied_comments || 0;
-                }
-            } catch (e) {
-                showToast('加载统计失败', 'error');
+            const result = await apiCall('/api/stats');
+            if (result.success && result.stats) {
+                document.getElementById('statPublished').textContent = result.stats.published_posts || 0;
+                document.getElementById('statLikes').textContent = result.stats.total_likes || 0;
+                document.getElementById('statComments').textContent = result.stats.total_comments || 0;
+                document.getElementById('statReplied').textContent = result.stats.replied_comments || 0;
             }
         }
 
-        // 记忆功能
         async function loadMemory() {
-            try {
-                const res = await fetch('/api/memory');
-                const data = await res.json();
-
-                if (data.success) {
-                    const container = document.getElementById('memoryList');
-                    if (!data.history || data.history.length === 0) {
-                        container.innerHTML = '<div class="text-muted">暂无对话历史</div>';
-                        return;
-                    }
-
-                    container.innerHTML = data.history.map(m => `
-                        <div class="history-item">
-                            <span class="badge bg-${m.role === 'user' ? 'primary' : 'success'}">${m.role === 'user' ? '👤' : '🤖'}</span>
-                            ${escapeHtml(m.content.substring(0, 50))}...
-                        </div>
-                    `).join('');
+            const result = await apiCall('/api/memory');
+            if (result.success) {
+                document.getElementById('memoryCount').textContent = `${result.status.count} 条对话历史`;
+                if (result.history && result.history.length > 0) {
+                    document.getElementById('memoryList').innerHTML = result.history.map(msg => `<div class="memory-item"><div class="memory-role ${msg.role}">${msg.role === 'user' ? '👤 用户' : '🤖 AI'}</div><div>${msg.content.substring(0, 100)}${msg.content.length > 100 ? '...' : ''}</div></div>`).join('');
                 }
-            } catch (e) {
-                showToast('加载历史失败', 'error');
             }
         }
 
         async function clearMemory() {
             if (!confirm('确定要清空所有对话历史吗？')) return;
-
-            try {
-                const res = await fetch('/api/memory/clear', {method: 'POST'});
-                const data = await res.json();
-                if (data.success) {
-                    showToast('已清空', 'success');
-                    loadMemory();
-                }
-            } catch (e) {
-                showToast('清空失败', 'error');
-            }
+            const result = await apiCall('/api/memory/clear', { method: 'POST' });
+            if (result.success) { alert('✅ 记忆已清空'); loadMemory(); }
         }
 
-        // 配置功能
+        async function checkMcpStatus() {
+            const result = await apiCall('/api/channel/status');
+            const statusEl = document.getElementById('mcpStatus');
+            const textEl = document.getElementById('mcpStatusText');
+            if (result.success && result.connected) { statusEl.className = 'status-badge success'; textEl.textContent = 'MCP 已连接'; }
+            else { statusEl.className = 'status-badge error'; textEl.textContent = 'MCP 未连接'; }
+        }
+
+        async function checkLogin() {
+            const statusEl = document.getElementById('loginStatus');
+            const textEl = document.getElementById('loginStatusText');
+            statusEl.className = 'status-badge warning';
+            textEl.textContent = '检查中...';
+            const result = await apiCall('/api/channel/check_login', { method: 'POST' });
+            if (result.success && result.message && result.message.includes('已登录')) { statusEl.className = 'status-badge success'; textEl.textContent = '已登录小红书'; }
+            else { statusEl.className = 'status-badge warning'; textEl.textContent = result.message || '未登录'; }
+        }
+
+        async function getQrcode() {
+            const result = await apiCall('/api/channel/qrcode', { method: 'POST' });
+            const area = document.getElementById('qrcodeArea');
+            if (result.success && result.data) {
+                area.innerHTML = `<p class="mb-3">请使用小红书 APP 扫码登录</p><div style="background: white; padding: 15px; border-radius: 12px;"><i class="bi bi-qr-code" style="font-size: 120px;"></i></div><p class="mt-3 text-muted">${result.data}</p>`;
+            } else area.innerHTML = `<p class="text-danger">获取二维码失败：${result.message || '请检查 MCP 连接'}</p>`;
+        }
+
         async function loadConfig() {
-            try {
-                const res = await fetch('/api/config');
-                const data = await res.json();
-
-                if (data.success) {
-                    configData = data;
-
-                    // 填充提供商
-                    const providerSelect = document.getElementById('configProvider');
-                    providerSelect.innerHTML = Object.entries(data.providers).map(([k, v]) =>
-                        `<option value="${k}" ${k === data.config.provider ? 'selected' : ''}>${v.name}</option>`
-                    ).join('');
-
-                    updateModels();
-                    document.getElementById('configApiKey').value = data.config.api_key || '';
-                    document.getElementById('configMcp').value = data.config.mcp_url || '';
-                }
-            } catch (e) {
-                showToast('加载配置失败', 'error');
+            const result = await apiCall('/api/config');
+            if (result.success) {
+                const providerSelect = document.getElementById('configProvider');
+                providerSelect.innerHTML = Object.entries(result.providers).map(([key, val]) => `<option value="${key}" ${key === result.config.provider ? 'selected' : ''}>${val.name}</option>`).join('');
+                loadModels();
+                document.getElementById('configApiKey').value = result.config.api_key || '';
+                document.getElementById('configMcpUrl').value = result.config.mcp_url || '';
             }
         }
 
-        function updateModels() {
-            if (!configData) return;
-
+        async function loadModels() {
             const provider = document.getElementById('configProvider').value;
-            const models = configData.providers[provider]?.models || [];
-            const currentModel = configData.config.model;
-
-            document.getElementById('configModel').innerHTML = models.map(m =>
-                `<option value="${m}" ${m === currentModel ? 'selected' : ''}>${m}</option>`
-            ).join('');
+            const result = await apiCall('/api/config');
+            if (result.success && result.providers[provider]) {
+                const modelSelect = document.getElementById('configModel');
+                const models = result.providers[provider].models;
+                const currentModel = result.config.model;
+                modelSelect.innerHTML = models.map(m => `<option value="${m}" ${m === currentModel ? 'selected' : ''}>${m}</option>`).join('');
+            }
         }
 
         async function saveConfig() {
             const provider = document.getElementById('configProvider').value;
             const model = document.getElementById('configModel').value;
-            const apiKey = document.getElementById('configApiKey').value;
-
-            try {
-                const res = await fetch('/api/config', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({provider, model, api_key: apiKey})
-                });
-                const data = await res.json();
-
-                if (data.success) {
-                    showToast('配置已保存', 'success');
-                } else {
-                    showToast(data.error || '保存失败', 'error');
-                }
-            } catch (e) {
-                showToast('网络错误', 'error');
-            }
+            const api_key = document.getElementById('configApiKey').value;
+            const mcp_url = document.getElementById('configMcpUrl').value;
+            const result = await apiCall('/api/config', { method: 'POST', body: JSON.stringify({ provider, model, api_key, mcp_url }) });
+            if (result.success) alert('✅ 配置已保存');
+            else alert('❌ 保存失败：' + result.error);
         }
 
-        async function saveMcpConfig() {
-            const mcpUrl = document.getElementById('configMcp').value;
-
-            try {
-                const res = await fetch('/api/config', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({mcp_url: mcpUrl})
-                });
-                const data = await res.json();
-
-                if (data.success) {
-                    showToast('MCP 配置已保存', 'success');
-                }
-            } catch (e) {
-                showToast('保存失败', 'error');
-            }
+        async function initAgent() {
+            const result = await apiCall('/api/agent/init', { method: 'POST' });
+            if (result.success) alert('✅ Agent 已重新初始化');
+            else alert('❌ 初始化失败：' + result.error);
         }
 
-        // 初始化 Agent
-        document.getElementById('initAgent').addEventListener('click', async () => {
-            try {
-                const res = await fetch('/api/agent/init', {method: 'POST'});
-                const.json();
-                if data = await res (data.success) {
-                    showToast('Agent 初始化成功', 'success');
-                } else {
-                    showToast(data.error || '初始化失败', 'error');
-                }
-            } catch (e) {
-                showToast('初始化失败', 'error');
-            }
-        });
-
-        // 工具函数
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
+        async function init() {
+            const health = await apiCall('/api/health');
+            const statusEl = document.getElementById('connectionStatus');
+            const textEl = document.getElementById('statusText');
+            if (health.agent_initialized) { statusEl.className = 'status-badge success'; textEl.textContent = 'Agent 已就绪'; }
+            else { statusEl.className = 'status-badge warning'; textEl.textContent = '等待初始化'; }
+            loadStats();
         }
 
-        // 初始化
-        loadConfig();
+        init();
     </script>
 </body>
 </html>
