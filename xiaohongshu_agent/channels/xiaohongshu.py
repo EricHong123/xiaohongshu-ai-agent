@@ -1,6 +1,7 @@
 """
 小红书渠道
 """
+import os
 import json
 from typing import List, Dict, Any, Optional
 import requests
@@ -11,8 +12,18 @@ class XiaohongshuChannel:
 
     def __init__(self, mcp_url: str = "http://localhost:18060/mcp"):
         self.url = mcp_url
+
+        # 创建不使用代理的 session
         self.session = requests.Session()
+        # 禁用环境变量代理
         self.session.trust_env = False
+
+        # 确保不使用代理
+        self.session.proxies = {
+            'http': None,
+            'https': None
+        }
+
         self.session_id = None
 
     def _call(self, method: str, tool_name: str = None, tool_args: dict = None) -> Dict:
@@ -31,7 +42,14 @@ class XiaohongshuChannel:
         if self.session_id:
             headers["Mcp-Session-Id"] = self.session_id
 
-        resp = self.session.post(self.url, json=req, headers=headers)
+        # 直接请求，不使用代理
+        resp = self.session.post(
+            self.url,
+            json=req,
+            headers=headers,
+            proxies={'http': None, 'https': None},
+            timeout=30
+        )
 
         if "Mcp-Session-Id" in resp.headers:
             self.session_id = resp.headers["Mcp-Session-Id"]
@@ -50,7 +68,17 @@ class XiaohongshuChannel:
             },
             "id": 1
         }
-        resp = self.session.post(self.url, json=req)
+
+        headers = {"Content-Type": "application/json"}
+
+        resp = self.session.post(
+            self.url,
+            json=req,
+            headers=headers,
+            proxies={'http': None, 'https': None},
+            timeout=30
+        )
+
         if "Mcp-Session-Id" in resp.headers:
             self.session_id = resp.headers["Mcp-Session-Id"]
 
