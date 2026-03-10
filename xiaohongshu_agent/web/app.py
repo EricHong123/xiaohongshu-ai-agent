@@ -228,6 +228,54 @@ def create_app():
             'agent_initialized': agent is not None
         })
 
+    @app.route('/api/channel/check_login', methods=['POST'])
+    def check_login():
+        """检查小红书登录状态"""
+        global agent
+
+        try:
+            if agent is None:
+                init_agent()
+
+            result = agent.channel.check_login()
+            return jsonify(result)
+        except Exception as e:
+            logger.error(f"检查登录失败: {e}")
+            return jsonify({'success': False, 'message': str(e)}), 500
+
+    @app.route('/api/channel/status')
+    @app.route('/api/channel/qrcode', methods=['POST'])
+    def get_login_qrcode():
+        """获取登录二维码"""
+        global agent
+
+        try:
+            if agent is None:
+                init_agent()
+
+            result = agent.channel.get_login_qrcode()
+            return jsonify(result)
+        except Exception as e:
+            logger.error(f"获取二维码失败: {e}")
+            return jsonify({'success': False, 'message': str(e)}), 500
+
+    def channel_status():
+        """获取通道状态"""
+        global agent
+
+        try:
+            if agent is None:
+                init_agent()
+
+            return jsonify({
+                'success': True,
+                'connected': agent.channel._initialized,
+                'mcp_url': agent.channel.url
+            })
+        except Exception as e:
+            logger.error(f"获取通道状态失败: {e}")
+            return jsonify({'success': False, 'error': str(e)}), 500
+
     return app
 
 
@@ -255,4 +303,4 @@ def init_agent():
 
 if __name__ == '__main__':
     app = create_app()
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 5003)), debug=True)

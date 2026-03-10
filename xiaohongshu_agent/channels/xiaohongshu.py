@@ -291,3 +291,22 @@ class XiaohongshuChannel:
         if self.session:
             self.session.close()
             logger.info("MCP 连接已关闭")
+
+    def get_login_qrcode(self) -> Dict:
+        """获取登录二维码"""
+        logger.info("获取登录二维码...")
+        try:
+            result = self._call(
+                "tools/call",
+                tool_name="get_login_qrcode",
+                tool_args={}
+            )
+
+            if "result" in result:
+                text = result["result"]["content"][0]["text"]
+                logger.info("获取二维码成功")
+                return {"success": True, "data": text}
+            return {"success": False, "message": "获取二维码失败"}
+        except MCPError as e:
+            logger.error(f"获取二维码失败: {e}")
+            return {"success": False, "message": str(e)}
