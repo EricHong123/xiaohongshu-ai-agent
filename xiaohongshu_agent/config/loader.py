@@ -7,6 +7,47 @@ from typing import Any, Dict, Optional
 from pathlib import Path
 
 
+# 提供商信息
+PROVIDERS_INFO = {
+    "openai": {
+        "name": "OpenAI",
+        "env_key": "OPENAI_API_KEY",
+        "models": ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-4", "gpt-3.5-turbo"],
+        "default_model": "gpt-4o",
+    },
+    "anthropic": {
+        "name": "Anthropic (Claude)",
+        "env_key": "ANTHROPIC_API_KEY",
+        "models": ["claude-sonnet-4-20250514", "claude-4-opus-20250514", "claude-3-opus-20240229", "claude-3-sonnet-20240229", "claude-3-haiku-20240307"],
+        "default_model": "claude-sonnet-4-20250514",
+    },
+    "zhipu": {
+        "name": "智谱 GLM",
+        "env_key": "ZHIPU_API_KEY",
+        "models": ["glm-4", "glm-4-flash", "glm-4-plus", "glm-3-turbo"],
+        "default_model": "glm-4",
+    },
+    "kimi": {
+        "name": "Kimi",
+        "env_key": "KIMI_API_KEY",
+        "models": ["kimi-flash-1.5", "kimi-pro-1.5", "kimi-flash", "kimi-pro"],
+        "default_model": "kimi-flash-1.5",
+    },
+    "minimax": {
+        "name": "Minimax",
+        "env_key": "MINIMAX_API_KEY",
+        "models": ["abab6.5s-chat", "abab6.5-chat", "abab5.5s-chat", "abab5.5-chat"],
+        "default_model": "abab6.5s-chat",
+    },
+    "gemini": {
+        "name": "Google Gemini",
+        "env_key": "GEMINI_API_KEY",
+        "models": ["gemini-2.0-flash", "gemini-1.5-pro", "gemini-1.5-flash", "gemini-1.5-flash-8b"],
+        "default_model": "gemini-2.0-flash",
+    },
+}
+
+
 class Config:
     """配置类"""
 
@@ -50,30 +91,31 @@ class Config:
     def get_api_key(self) -> str:
         """获取 API Key"""
         provider = self.get("llm_provider", "openai")
-        env_keys = {
-            "openai": "OPENAI_API_KEY",
-            "anthropic": "ANTHROPIC_API_KEY",
-            "zhipu": "ZHIPU_API_KEY",
-            "kimi": "KIMI_API_KEY",
-            "gemini": "GEMINI_API_KEY",
-            "minimax": "MINIMAX_API_KEY",
-        }
-        key = env_keys.get(provider, "OPENAI_API_KEY")
-        return self.data.get(f"{provider}_api_key") or os.getenv(key, "")
+        provider_info = PROVIDERS_INFO.get(provider, PROVIDERS_INFO["openai"])
+        env_key = provider_info["env_key"]
+
+        # 优先使用文件中的配置
+        return self.data.get(f"{provider}_api_key") or os.getenv(env_key, "")
 
     def get_model(self) -> str:
         """获取模型"""
         provider = self.get("llm_provider", "openai")
-        models = {
-            "openai": "gpt-4",
-            "anthropic": "claude-sonnet-4-20250514",
-            "zhipu": "glm-4",
-            "kimi": "kimi-flash-1.5",
-            "gemini": "gemini-2.0-flash",
-            "minimax": "abab6.5s-chat",
-        }
+        provider_info = PROVIDERS_INFO.get(provider, PROVIDERS_INFO["openai"])
+
+        # 优先使用文件中的配置
         key = f"{provider}_model"
-        return self.data.get(key) or models.get(provider, "gpt-4")
+        return self.data.get(key) or provider_info.get("default_model", "gpt-4o")
+
+    def get_available_providers(self) -> Dict:
+        """获取可用的提供商列表"""
+        return PROVIDERS_INFO
+
+    def get_provider_models(self, provider: str = None) -> list:
+        """获取提供商的所有模型"""
+        if provider is None:
+            provider = self.get("llm_provider", "openai")
+        provider_info = PROVIDERS_INFO.get(provider, PROVIDERS_INFO["openai"])
+        return provider_info.get("models", [])
 
 
 def load_config() -> Config:
