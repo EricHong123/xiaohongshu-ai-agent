@@ -44,7 +44,7 @@ def print_banner():
 ║  ██║  ██║███████╗╚██████╔╝╚██████╔╝██║  ██║   ██║   ███████╗███████╗   ║
 ║  ╚═╝  ╚═╝╚══════╝ ╚═════╝  ╚═════╝ ╚═╝  ╚═╝   ╚═╝   ╚══════╝╚══════╝   ║
 ║                                                                           ║
-║                    🤖 AI Agent v1.1.0                                    ║
+║                    🤖 AI Agent v1.2.0                                    ║
 ║                                                                           ║
 ╚═══════════════════════════════════════════════════════════════════════════╝
     """
@@ -60,11 +60,9 @@ def select_option(title: str, options: list) -> Optional[int]:
         return None
 
     if not PROMPT_TOOLKIT_AVAILABLE:
-        # 回退到数字选择
         return select_option_fallback(title, options)
 
     try:
-        # 使用 radiolist_dialog
         values = [(i, opt) for i, opt in enumerate(options)]
         result = radiolist_dialog(
             title=title,
@@ -77,9 +75,7 @@ def select_option(title: str, options: list) -> Optional[int]:
 
 
 def select_option_fallback(title: str, options: list) -> Optional[int]:
-    """
-    数字选择回退方案
-    """
+    """数字选择回退方案"""
     console.print(f"\n[bold cyan]{title}[/bold cyan]\n")
 
     for i, opt in enumerate(options):
@@ -99,9 +95,7 @@ def select_option_fallback(title: str, options: list) -> Optional[int]:
 
 
 def confirm_dialog(title: str, text: str) -> bool:
-    """
-    确认对话框
-    """
+    """确认对话框"""
     if not PROMPT_TOOLKIT_AVAILABLE:
         return confirm_fallback(title, text)
 
@@ -129,9 +123,7 @@ def confirm_fallback(title: str, text: str) -> bool:
 
 
 def input_text(title: str, default: str = "") -> str:
-    """
-    输入文本
-    """
+    """输入文本"""
     if not PROMPT_TOOLKIT_AVAILABLE:
         return input_fallback(title, default)
 
@@ -166,23 +158,19 @@ def main(
     """小红书 AI Agent"""
     print_banner()
 
-    # 延迟导入
     from xiaohongshu_agent import XiaohongshuAgent
     from xiaohongshu_agent.config import load_config
     from xiaohongshu_agent.providers import get_available_providers
 
-    # 加载配置
     cfg = load_config()
     api_key = cfg.get_api_key()
     model = cfg.get_model()
     provider = cfg.get("llm_provider", "openai")
     mcp_url = cfg.get("mcp_url", "http://localhost:18060/mcp")
 
-    # 设置环境变量
     if api_key:
         os.environ[f"{provider.upper()}_API_KEY"] = api_key
 
-    # 初始化 Agent
     console.print("\n[cyan]初始化 Agent...[/cyan]")
     agent = XiaohongshuAgent(
         provider=provider,
@@ -191,7 +179,6 @@ def main(
         mcp_url=mcp_url,
     )
 
-    # 执行命令
     if config:
         show_config(agent, cfg)
     elif search or keyword:
@@ -286,7 +273,6 @@ def do_gui(agent, cfg):
 
     while True:
         console.print()
-        # 打印菜单
         console.print("[bold magenta]╔═══════════════════════════════════════╗[/bold magenta]")
         console.print("[bold magenta]║         小红书 AI Agent              ║[/bold magenta]")
         console.print("[bold magenta]╠═══════════════════════════════════════╣[/bold magenta]")
@@ -296,21 +282,20 @@ def do_gui(agent, cfg):
 
         console.print("[bold magenta]╚═══════════════════════════════════════╝[/bold magenta]")
 
-        # 使用上下选择
         choice = select_option("请选择操作", menu_items)
 
-        if choice is None or choice == 5:  # 退出
+        if choice is None or choice == 5:
             console.print("\n[cyan]再见! 👋[/cyan]\n")
             break
-        elif choice == 0:  # 搜索
+        elif choice == 0:
             do_search_menu(agent)
-        elif choice == 1:  # 发布
+        elif choice == 1:
             do_publish_menu(agent)
-        elif choice == 2:  # 统计
+        elif choice == 2:
             do_stats(agent)
-        elif choice == 3:  # 对话
+        elif choice == 3:
             do_chat(agent)
-        elif choice == 4:  # 设置
+        elif choice == 4:
             do_settings_menu(agent, cfg)
 
 
@@ -351,6 +336,7 @@ def do_settings_menu(agent, cfg):
 
     settings_items = [
         "🔐 切换 LLM 提供商",
+        "📦 选择模型",
         "🔑 配置 API Key",
         "🌐 配置 MCP 地址",
         "📋 查看当前配置",
@@ -361,7 +347,7 @@ def do_settings_menu(agent, cfg):
     while True:
         choice = select_option("系统设置", settings_items)
 
-        if choice is None or choice == 5:
+        if choice is None or choice == 6:
             break
         elif choice == 0:
             # 切换提供商
@@ -374,16 +360,38 @@ def do_settings_menu(agent, cfg):
                 cfg.save()
                 console.print(f"[green]已切换到: {provider_names[idx]}[/green]")
         elif choice == 1:
-            console.print("\n[yellow]请在配置文件中设置 API Key[/yellow]")
+            # 选择模型
+            providers = get_available_providers()
+            provider = cfg.get("llm_provider", "openai")
+            provider_info = providers.get(provider, providers["openai"])
+            models = provider_info.get("models", [])
+            current_model = cfg.get_model()
+
+            # 添加当前模型标记
+            model_options = []
+            for m in models:
+                if m == current_model:
+                    model_options.append(f"{m} ✓")
+                else:
+                    model_options.append(m)
+
+            idx = select_option(f"选择模型 ({provider})", model_options)
+            if idx is not None:
+                selected_model = models[idx]
+                cfg.set(f"{provider}_model", selected_model)
+                cfg.save()
+                console.print(f"[green]已选择模型: {selected_model}[/green]")
         elif choice == 2:
+            console.print("\n[yellow]请在配置文件中设置 API Key[/yellow]")
+            console.print(f"[dim]配置文件位置: ~/.xiaohongshu_agent/config.json[/dim]")
+        elif choice == 3:
             new_url = input_text("MCP 地址", cfg.get("mcp_url"))
             cfg.set("mcp_url", new_url)
             cfg.save()
             console.print(f"[green]MCP 地址已更新: {new_url}[/green]")
-        elif choice == 3:
-            show_config(agent, cfg)
         elif choice == 4:
-            # 查看对话历史
+            show_config(agent, cfg)
+        elif choice == 5:
             history = agent.memory.get_history(10)
             console.print(f"\n[cyan]对话历史 ({len(history)} 条):[/cyan]\n")
             for i, msg in enumerate(history, 1):
