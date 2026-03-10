@@ -11,5 +11,8 @@ anthropic>=0.25.0
 # 向量数据库 (可选)
 # chromadb>=0.4.0
 
+# Web 框架
+flask>=3.0.0
+
 # 工具库
 python-dotenv>=1.0.0
