@@ -6,6 +6,7 @@
 
 - 🔍 **搜索** - 搜索小红书热门帖子
 - 📝 **发布** - AI 生成内容并自动发布
+- 🎬 **视频生成** - AI 分析图片生成种草视频
 - 🤖 **AI 对话** - 支持多轮对话
 - 🧠 **记忆** - 对话历史自动保存
 - 📚 **知识库** - 内置运营技巧知识库
@@ -46,6 +47,7 @@ xiaohongshu_agent/           # 主包
 │   └── gemini.py
 ├── storage/                # 存储
 │   └── database.py         # SQLite
+├── workflow/                # 视频生成工作流
 └── utils/                  # 工具
     └── logger.py           # 日志系统
 
@@ -164,6 +166,101 @@ web_tool = registry.get("web_search")
 result = web_tool.execute(query="AI 工具")
 ```
 
+
+## 🎬 视频生成工作流
+
+从产品图片自动生成小红书种草视频
+
+### 工作流程
+
+```
+┌────────────┐    ┌────────────┐    ┌─────────────┐
+│ 1. 分析图片 │ -> │ 2. 生成脚本 │ -> │ 3. 生成视频 │
+│  (GLM-4V)  │    │  (GLM-4)   │    │  (可灵AI)   │
+└────────────┘    └────────────┘    └─────────────┘
+                                              │
+                                              ▼
+┌────────────┐    ┌────────────┐    ┌─────────────┐
+│ 6. 发布     │ <- │ 5. 整合剪辑 │ <- │ 4. 生成音频 │
+│  小红书    │    │  (FFmpeg)  │    │  (海螺TTS)  │
+└────────────┘    └────────────┘    └─────────────┘
+```
+
+### 成本估算 (7-15秒视频)
+
+| 环节 | 服务 | 成本 |
+|------|------|------|
+| 图片分析 | 智谱 GLM-4V | ¥0.01 |
+| 脚本生成 | 智谱 GLM-4 | ¥0.005 |
+| 视频生成 | 可灵 AI | ¥1.5-3 |
+| 音频生成 | 海螺 TTS | ¥0.3-0.5 |
+| **合计** | | **¥2-4/条** |
+
+### 环境配置
+
+```bash
+# 智谱 (图片分析 + 脚本)
+export ZHIPU_API_KEY="your-zhipu-key"
+
+# 可灵 (视频生成)
+export KLING_API_KEY="your-kling-key"
+
+# 海螺/MiniMax (音频)
+export MINIMAX_API_KEY="your-minimax-key"
+```
+
+### 命令行使用
+
+```bash
+# 生成视频
+python3 -m xiaohongshu_agent --video create \
+  --images "product1.jpg,product2.jpg" \
+  --product "护肤品" \
+  --duration 10
+
+# 测试连接
+python3 -m xiaohongshu_agent --video test
+
+# 查看可用音色
+python3 -m xiaohongshu_agent --video voices
+```
+
+### Python API
+
+```python
+from xiaohongshu_agent.workflow import VideoWorkflow
+
+# 初始化
+workflow = VideoWorkflow(
+    output_dir="output/videos",
+    config={
+        "zhipu_api_key": "your-key",
+        "kling_api_key": "your-key",
+        "minimax_api_key": "your-key"
+    }
+)
+
+# 运行工作流
+result = workflow.run(
+    image_paths=["img1.jpg", "img2.jpg"],
+    product_name="护肤品",
+    duration=10,
+    auto_publish=False
+)
+
+print(f"视频: {result['output']['video']}")
+```
+
+### 可用音色
+
+| 类型 | 音色ID |
+|------|--------|
+| 男声 | male-qn-qingse (青涩青年) |
+| 男声 | male-qn-jingying (精英青年) |
+| 男声 | male-qn-badao (霸道总裁) |
+| 女声 | female-shaonv (活泼少女) |
+| 女声 | female-yujie (温柔御姐) |
+
 ## 🔌 LLM 提供商
 
 | 提供商 | 环境变量 | 默认模型 |
@@ -252,6 +349,13 @@ python3 -m xiaohongshu_agent --config
 
 ## 📝 更新日志
 
+### v1.3.0 (2026-03-11)
+- 新增视频生成工作流模块
+- 支持多模态LLM分析产品图片
+- 集成可灵AI视频生成
+- 集成海螺TTS音频生成
+- FFmpeg视频剪辑整合
+- CLI新增 --video 命令
 ### v1.2.0 (2026-03-10)
 - 添加 loguru 日志系统
 - MCP 通道添加重试机制、超时处理

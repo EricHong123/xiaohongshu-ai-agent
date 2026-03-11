@@ -154,9 +154,16 @@ def main(
     chat: bool = typer.Option(False, "--chat", help="对话模式"),
     config: bool = typer.Option(False, "--config", help="显示配置"),
     gui: bool = typer.Option(False, "--gui", help="交互式界面"),
+    video: bool = typer.Option(False, "--video", help="视频生成模式"),
 ):
     """小红书 AI Agent"""
     print_banner()
+
+    # 视频模式
+    if video:
+        from xiaohongshu_agent.cli.video_commands import video_app
+        video_app()
+        return
 
     from xiaohongshu_agent import XiaohongshuAgent
     from xiaohongshu_agent.config import load_config
