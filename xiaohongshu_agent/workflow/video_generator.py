@@ -1,6 +1,7 @@
 """
 视频生成器 - 使用智谱CogVideoX
 """
+import os
 import time
 from typing import List, Dict, Any, Optional
 
@@ -10,7 +11,7 @@ class VideoGenerator:
 
     def __init__(
         self,
-        api_key: str = "",
+        api_key: str = "343421dc621b4dc494aa6c693f500ed3.M7s8XK5hE32Kukqe",
         model: str = "cogvideoX-3"
     ):
         self.api_key = api_key or os.getenv("ZHIPU_API_KEY", "")

@@ -2,6 +2,42 @@
 视频生成工作流 CLI 命令
 """
 import os
+import json
+import time
+from pathlib import Path
+
+# #region agent log
+_DEBUG_LOG = Path(__file__).resolve().parent.parent.parent / "debug-2ed257.log"
+def _dlog(msg: str, data: dict, h: str = ""):
+    try:
+        with open(_DEBUG_LOG, "a") as f:
+            f.write(json.dumps({"sessionId":"2ed257","runId":"create","hypothesisId":h,"location":"video_commands","message":msg,"data":data,"timestamp":int(time.time()*1000)}) + "\n")
+    except Exception:
+        pass
+# #endregion
+
+# 加载 config/.env（尝试项目根目录和 __file__ 相对路径）
+try:
+    from dotenv import load_dotenv, dotenv_values
+    paths_tried = []
+    used_path = None
+    for base in (Path(__file__).resolve().parent.parent.parent, Path.cwd()):
+        env_path = base / "config" / ".env"
+        paths_tried.append(str(env_path))
+        if env_path.exists():
+            load_dotenv(env_path)
+            used_path = str(env_path)
+            break
+    _dlog("module_load_dotenv", {"paths_tried": paths_tried, "used_path": used_path, "zhipu_set": bool(os.getenv("ZHIPU_API_KEY")), "minimax_set": bool(os.getenv("MINIMAX_API_KEY"))}, "H3")
+    env_path_for_parse = used_path or (paths_tried[0] if paths_tried else None)
+    if env_path_for_parse and Path(env_path_for_parse).exists():
+        vals = dotenv_values(env_path_for_parse)
+        _dlog("dotenv_parsed", {"keys": list(vals.keys()), "ZHIPU_len": len(vals.get("ZHIPU_API_KEY", "") or ""), "Zhipu_len": len(vals.get("Zhipu_API_KEY", "") or ""), "MINIMAX_len": len(vals.get("MINIMAX_API_KEY", "") or "")}, "H1,H2,H4")
+except ImportError:
+    _dlog("module_load_dotenv", {"error": "dotenv not installed"}, "H3")
+except Exception as e:
+    _dlog("module_load_dotenv", {"error": str(e)}, "H3")
+
 import typer
 from typing import Optional, List
 from rich.console import Console
@@ -10,7 +46,7 @@ from xiaohongshu_agent.workflow import VideoWorkflow
 
 console = Console()
 
-video_app = typer.Ttyper(help="小红书视频生成工作流")
+video_app = typer.Typer(help="小红书视频生成工作流")
 
 
 @video_app.command()
@@ -49,6 +85,24 @@ def create(
     if not valid_images:
         console.print("[red]错误: 没有有效的图片文件[/red]")
         raise typer.Exit(1)
+
+    # 再次加载 .env（确保在初始化工作流前已加载）
+    try:
+        from dotenv import load_dotenv
+        loaded_path = None
+        for env_path in [
+            Path.cwd() / "config" / ".env",
+            Path(__file__).resolve().parent.parent.parent / "config" / ".env",
+        ]:
+            if env_path.exists():
+                load_dotenv(env_path, override=True)
+                loaded_path = str(env_path)
+                break
+        # #region agent log
+        _dlog("create_load_dotenv", {"loaded_path": loaded_path, "cwd": str(Path.cwd()), "zhipu_set": bool(os.getenv("ZHIPU_API_KEY")), "minimax_set": bool(os.getenv("MINIMAX_API_KEY"))}, "H3,H4,H5")
+        # #endregion
+    except ImportError:
+        pass
 
     # 初始化工作流
     workflow = VideoWorkflow(output_dir=output)
