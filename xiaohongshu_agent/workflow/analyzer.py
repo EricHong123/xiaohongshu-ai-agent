@@ -15,7 +15,7 @@ class ImageAnalyzer:
         self,
         api_key: str = "",
         base_url: str = "",
-        model: str = "glm-4v"
+        model: str = "glm-4.6v"
     ):
         self.api_key = api_key or os.getenv("ZHIPU_API_KEY", "")
         self.base_url = base_url or os.getenv(
