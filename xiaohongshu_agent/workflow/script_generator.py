@@ -13,7 +13,7 @@ class ScriptGenerator:
         self,
         api_key: str = "",
         base_url: str = "",
-        model: str = "glm-4-flash"
+        model: str = "glm-4"
     ):
         self.api_key = api_key or os.getenv("ZHIPU_API_KEY", "")
         self.base_url = base_url or os.getenv(
