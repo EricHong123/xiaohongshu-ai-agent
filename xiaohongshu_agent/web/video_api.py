@@ -138,3 +138,47 @@ def register_video_routes(app):
         directory = os.path.dirname(full_path)
         filename = os.path.basename(full_path)
         return send_from_directory(directory, filename)
+
+    @app.route('/api/video/upload', methods=['POST'])
+    def video_upload():
+        """上传图片"""
+        try:
+            from werkzeug.utils import secure_filename
+            import uuid
+            
+            if 'images' not in request.files:
+                return jsonify({'error': '没有文件'}), 400
+            
+            files = request.files.getlist('images')
+            if not files:
+                return jsonify({'error': '没有文件'}), 400
+            
+            # 确保上传目录存在
+            upload_dir = os.path.join(PROJECT_ROOT, 'output', 'uploads')
+            os.makedirs(upload_dir, exist_ok=True)
+            
+            saved_paths = []
+            for f in files:
+                if f.filename:
+                    ext = os.path.splitext(f.filename)[1]
+                    filename = f"{uuid.uuid4().hex}{ext}"
+                    filepath = os.path.join(upload_dir, filename)
+                    f.save(filepath)
+                    # 返回可以访问的路径
+                    saved_paths.append(f"/output/uploads/{filename}")
+            
+            return jsonify({'success': True, 'paths': saved_paths})
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/output/<path:subpath>')
+    def serve_output(subpath):
+        """服务output目录下的文件"""
+        if '..' in subpath:
+            return "Forbidden", 403
+        full_path = os.path.join(PROJECT_ROOT, 'output', subpath)
+        if not os.path.exists(full_path):
+            return "File not found", 404
+        directory = os.path.dirname(full_path)
+        filename = os.path.basename(full_path)
+        return send_from_directory(directory, filename)

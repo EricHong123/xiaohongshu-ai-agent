@@ -135,6 +135,7 @@
                             <div class="mb-4">
                                 <label class="form-label fw-bold">产品图片</label>
                                 <div class="input-group">
+                                    <input type="file" class="form-control" id="imageFile" accept="image/*" multiple>
                                     <input type="text" class="form-control" id="imageUrls"
                                            placeholder="输入图片URL，多个用逗号分隔">
                                     <button class="btn btn-outline-secondary" type="button" id="addImagesBtn">
@@ -293,6 +294,33 @@
         document.addEventListener('DOMContentLoaded', function() {
             loadConfigStatus();
             loadVoices();
+
+            // 文件上传处理
+            document.getElementById("imageFile").addEventListener("change", async function(e) {
+                const files = e.target.files;
+                if (files.length > 0) {
+                    const formData = new FormData();
+                    for (let i = 0; i < files.length; i++) {
+                        formData.append("images", files[i]);
+                    }
+                    try {
+                        const response = await fetch("/api/video/upload", { method: "POST", body: formData });
+                        const result = await response.json();
+                        if (result.success) {
+                            // 添加到预览
+                            result.paths.forEach(path => {
+                                const img = document.createElement("img");
+                                img.src = path;
+                                img.className = "preview-img";
+                                document.getElementById("imagePreview").appendChild(img);
+                            });
+                            alert("上传成功");
+                        } else {
+                            alert("上传失败: " + result.error);
+                        }
+                    } catch (err) { alert("上传失败"); }
+                }
+            });
 
             // 添加图片按钮
             document.getElementById('addImagesBtn').addEventListener('click', function() {
