@@ -62,9 +62,8 @@ class VideoWorkflow:
         )
 
         self.video_gen = VideoGenerator(
-            access_key=self.config.get("kling_access_key", os.getenv("KLING_ACCESS_KEY")),
-            secret_key=self.config.get("kling_secret_key", os.getenv("KLING_SECRET_KEY")),
-            model=self.config.get("video_model", "kling-v1")
+            api_key=self.config.get("zhipu_api_key", os.getenv("ZHIPU_API_KEY")),
+            model=self.config.get("video_model", "cogvideoX-3")
         )
 
         self.audio_gen = AudioGenerator(
@@ -333,9 +332,9 @@ class VideoWorkflow:
 
         # 测试可灵API
         if os.getenv("KLING_ACCESS_KEY"):
-            results["kling"] = "✅ 已配置"
+            results["cogvideo"] = "✅ 已配置 (cogvideoX-3)"
         else:
-            results["kling"] = "⚠️ 未配置 KLING_ACCESS_KEY"
+            results["cogvideo"] = "⚠️ 未配置 ZHIPU_API_KEY"
 
         # 测试海螺API
         if os.getenv("MINIMAX_API_KEY"):
