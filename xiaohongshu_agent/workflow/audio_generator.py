@@ -59,9 +59,9 @@ class AudioGenerator:
             "text": text,
             "voice_setting": {
                 "voice_id": voice,
-                "speed": speed,
-                "volume": volume,
-                "pitch": pitch
+                "speed": int(speed * 100),  # 转换为整数百分比
+                "volume": int(volume * 100),  # 转换为整数百分比
+                "pitch": int(pitch)  # 转换为整数
             },
             "audio_setting": {
                 "sample_rate": 32000,

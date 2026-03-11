@@ -329,20 +329,30 @@ class VideoWorkflow:
 
         return result
 
-    def _download_video(self, url: str, filename: str) -> str:
-        """下载视频"""
+    def _download_video(self, url: str, filename: str, max_retries: int = 3) -> str:
+        """下载视频 - 带重试机制"""
         import requests
 
         output_path = os.path.join(self.output_dir, filename)
 
-        try:
-            resp = requests.get(url, timeout=120)
-            with open(output_path, "wb") as f:
-                f.write(resp.content)
-            return output_path
-        except Exception as e:
-            print(f"下载视频失败: {e}")
-            return ""
+        for attempt in range(max_retries):
+            try:
+                resp = requests.get(url, timeout=120)
+                if resp.status_code == 200:
+                    with open(output_path, "wb") as f:
+                        f.write(resp.content)
+                    return output_path
+                else:
+                    print(f"下载失败 (尝试 {attempt+1}/{max_retries}): HTTP {resp.status_code}")
+            except Exception as e:
+                print(f"下载失败 (尝试 {attempt+1}/{max_retries}): {e}")
+            
+            if attempt < max_retries - 1:
+                import time
+                time.sleep(2)  # 等待后重试
+
+        print(f"下载视频失败: 已重试{max_retries}次")
+        return ""
 
     def get_status(self, task_id: str) -> Dict[str, Any]:
         """查询任务状态"""
