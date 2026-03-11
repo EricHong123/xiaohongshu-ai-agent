@@ -2,10 +2,9 @@
 视频生成器 - 使用可灵AI生成视频
 """
 import os
-import requests
 import time
-import hashlib
-import hmac
+import jwt
+import requests
 from typing import List, Dict, Any, Optional
 from pathlib import Path
 
@@ -17,7 +16,7 @@ class VideoGenerator:
         self,
         access_key: str = "",
         secret_key: str = "",
-        base_url: str = "https://api.klingai.com",
+        base_url: str = "https://api-beijing.klingai.com",
         model: str = "kling-v1"
     ):
         self.access_key = access_key or os.getenv("KLING_ACCESS_KEY", "")
@@ -25,40 +24,46 @@ class VideoGenerator:
         self.base_url = base_url
         self.model = model
 
-    def _sign(self, method: str, path: str, timestamp: str) -> str:
-        """生成签名"""
-        message = f"{method}\n{path}\n{timestamp}"
-        signature = hmac.new(
-            self.secret_key.encode('utf-8'),
-            message.encode('utf-8'),
-            digestmod=hashlib.sha256
-        ).hexdigest()
-        return signature
+    def _generate_token(self) -> str:
+        """生成JWT Token"""
+        if not self.access_key or not self.secret_key:
+            raise ValueError("请配置 KLING_ACCESS_KEY 和 KLING_SECRET_KEY")
+
+        headers = {"alg": "HS256", "typ": "JWT"}
+        payload = {
+            "iss": self.access_key,
+            "exp": int(time.time()) + 1800,
+            "nbf": int(time.time()) - 5
+        }
+
+        return jwt.encode(payload, self.secret_key, headers=headers)
 
     def _make_request(self, method: str, path: str, data: dict = None) -> dict:
         """发送API请求"""
         if not self.access_key or not self.secret_key:
-            return {"error": "请配置 KLING_ACCESS_KEY 和 KLING_SECRET_KEY 环境变量"}
+            return {"error": "请配置 KLING_ACCESS_KEY 和 KLING_SECRET_KEY"}
 
-        timestamp = str(int(time.time()))
+        token = self._generate_token()
 
         headers = {
             "Content-Type": "application/json",
-            "X-Access-Key": self.access_key,
-            "X-Timestamp": timestamp
+            "Authorization": f"Bearer {token}"
         }
-
-        # 生成签名
-        signature = self._sign(method, path, timestamp)
-        headers["X-Signature"] = signature
 
         url = f"{self.base_url}{path}"
 
         try:
+            # 使用session支持代理环境
+            session = requests.Session()
+            session.verify = False
+            
+            import urllib3
+            urllib3.disable_warnings()
+
             if method == "GET":
-                resp = requests.get(url, headers=headers, timeout=30)
+                resp = session.get(url, headers=headers, timeout=60)
             else:
-                resp = requests.post(url, headers=headers, json=data, timeout=60)
+                resp = session.post(url, headers=headers, json=data, timeout=120)
 
             return resp.json()
         except Exception as e:
@@ -84,7 +89,7 @@ class VideoGenerator:
             任务信息,包含task_id用于查询结果
         """
         if not self.access_key or not self.secret_key:
-            return {"error": "请配置 KLING_ACCESS_KEY 和 KLING_SECRET_KEY 环境变量"}
+            return {"error": "请配置 KLING_ACCESS_KEY 和 KLING_SECRET_KEY"}
 
         # 验证时长
         duration = min(max(duration, 3), 10)
