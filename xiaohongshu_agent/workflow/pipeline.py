@@ -45,33 +45,37 @@ class VideoWorkflow:
 
         # 配置
         self.config = config or {}
+        
+        # 确保 config 是字典
+        if self.config is None:
+            self.config = {}
 
         # 初始化各模块
         self.analyzer = ImageAnalyzer(
-            api_key=config.get("zhipu_api_key", os.getenv("ZHIPU_API_KEY")),
-            model=config.get("image_analyzer_model", "glm-4v-flash")
+            api_key=self.config.get("zhipu_api_key", os.getenv("ZHIPU_API_KEY")),
+            model=self.config.get("image_analyzer_model", "glm-4v-flash")
         )
 
         self.script_gen = ScriptGenerator(
-            api_key=config.get("zhipu_api_key", os.getenv("ZHIPU_API_KEY")),
-            model=config.get("script_model", "glm-4-flash")
+            api_key=self.config.get("zhipu_api_key", os.getenv("ZHIPU_API_KEY")),
+            model=self.config.get("script_model", "glm-4-flash")
         )
 
         self.video_gen = VideoGenerator(
-            api_key=config.get("kling_api_key", os.getenv("KLING_API_KEY")),
-            model=config.get("video_model", "kling-v1")
+            api_key=self.config.get("kling_api_key", os.getenv("KLING_API_KEY")),
+            model=self.config.get("video_model", "kling-v1")
         )
 
         self.audio_gen = AudioGenerator(
-            api_key=config.get("minimax_api_key", os.getenv("MINIMAX_API_KEY")),
-            model=config.get("audio_model", "speech-01-turbo")
+            api_key=self.config.get("minimax_api_key", os.getenv("MINIMAX_API_KEY")),
+            model=self.config.get("audio_model", "speech-01-turbo")
         )
 
         self.editor = VideoEditor(output_dir=output_dir)
 
         self.publisher = XiaohongshuPublisher(
-            mcp_url=config.get("mcp_url", os.getenv("XHS_MCP_URL")),
-            cookie=config.get("xhs_cookie", os.getenv("XHS_COOKIE"))
+            mcp_url=self.config.get("mcp_url", os.getenv("XHS_MCP_URL")),
+            cookie=self.config.get("xhs_cookie", os.getenv("XHS_COOKIE"))
         )
 
     def run(
@@ -319,7 +323,10 @@ class VideoWorkflow:
                 product_info={"name": "测试产品", "features": ["测试"]},
                 duration=5
             )
-            results["zhipu"] = "✅ OK" if "error" not in test_result else f"❌ {test_result.get('error')}"
+            if isinstance(test_result, dict):
+                results["zhipu"] = "✅ OK" if "error" not in test_result else f"❌ {test_result.get('error', '未知错误')}"
+            else:
+                results["zhipu"] = "✅ OK"
         except Exception as e:
             results["zhipu"] = f"❌ {str(e)}"
 
