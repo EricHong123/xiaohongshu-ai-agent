@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>视频生成 - 小红书 AI Agent</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 900px;
+            padding-top: 2rem;
+        }
+        .card {
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        .card-header {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ffa500 100%);
+            border-radius: 16px 16px 0 0 !important;
+            padding: 1.5rem;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            padding: 0.8rem 2rem;
+            border-radius: 8px;
+        }
+        .btn-primary:hover {
+            opacity: 0.9;
+        }
+        .form-control {
+            border-radius: 8px;
+            border: 2px solid #e0e0e0;
+            padding: 0.8rem;
+        }
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        .preview-img {
+            width: 120px;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin: 5px;
+            border: 2px dashed #ccc;
+        }
+        .config-item {
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        .config-item.configured {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+        }
+        .config-item.not-configured {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+        }
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        .status-indicator.ok {
+            background: #28a745;
+        }
+        .status-indicator.error {
+            background: #dc3545;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+        }
+        .spinner-border {
+            width: 3rem;
+            height: 3rem;
+        }
+        .result-card {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+        .nav-tabs .nav-link {
+            color: #495057;
+            font-weight: 500;
+        }
+        .nav-tabs .nav-link.active {
+            color: #667eea;
+            border-color: #dee2e6 #dee2e6 #fff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="card-header text-white">
+                <h4 class="mb-0"><i class="bi bi-camera-video"></i> 视频生成工作流</h4>
+                <p class="mb-0 mt-2 opacity-75">从产品图片自动生成小红书种草视频</p>
+            </div>
+            <div class="card-body p-4">
+                <!-- 导航 -->
+                <ul class="nav nav-tabs mb-4" role="tablist">
+                    <li class="nav-item">
+                        <a class="nav-link active" data-bs-toggle="tab" href="#generate">
+                            <i class="bi bi-plus-circle"></i> 生成视频
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#config">
+                            <i class="bi bi-gear"></i> API配置
+                        </a>
+                    </li>
+                </ul>
+
+                <div class="tab-content">
+                    <!-- 生成视频 -->
+                    <div class="tab-pane fade show active" id="generate">
+                        <form id="videoForm">
+                            <!-- 产品图片 -->
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">产品图片</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="imageUrls"
+                                           placeholder="输入图片URL，多个用逗号分隔">
+                                    <button class="btn btn-outline-secondary" type="button" id="addImagesBtn">
+                                        <i class="bi bi-plus"></i> 添加
+                                    </button>
+                                </div>
+                                <div class="mt-2" id="imagePreview"></div>
+                                <small class="text-muted">支持 JPG、PNG 格式，建议使用 9:16 竖版图片</small>
+                            </div>
+
+                            <!-- 产品名称 -->
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">产品名称</label>
+                                <input type="text" class="form-control" id="productName"
+                                       placeholder="例如：护肤品、化妆品、首饰等">
+                            </div>
+
+                            <!-- 额外描述 -->
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">额外描述（可选）</label>
+                                <textarea class="form-control" id="context" rows="2"
+                                          placeholder="补充产品特点、目标人群等信息"></textarea>
+                            </div>
+
+                            <!-- 时长和音色 -->
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">视频时长</label>
+                                    <select class="form-select" id="duration">
+                                        <option value="7">7秒</option>
+                                        <option value="10" selected>10秒</option>
+                                        <option value="15">15秒</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">配音音色</label>
+                                    <select class="form-select" id="voice">
+                                        <option value="male-qn-qingse" selected>青涩青年（男）</option>
+                                        <option value="male-qn-jingying">精英青年（男）</option>
+                                        <option value="male-qn-badao">霸道总裁（男）</option>
+                                        <option value="female-shaonv">活泼少女（女）</option>
+                                        <option value="female-yujie">温柔御姐（女）</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- 自动发布 -->
+                            <div class="mb-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="autoPublish">
+                                    <label class="form-check-label" for="autoPublish">
+                                        生成完成后自动发布到小红书
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- 提交按钮 -->
+                            <button type="submit" class="btn btn-primary btn-lg w-100">
+                                <i class="bi bi-play-fill"></i> 开始生成视频
+                            </button>
+                        </form>
+
+                        <!-- 加载中 -->
+                        <div class="loading" id="loading">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-3" id="loadingText">正在分析图片...</p>
+                            <div class="progress mt-3" style="height: 8px;">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated"
+                                     role="progressbar" style="width: 100%"></div>
+                            </div>
+                        </div>
+
+                        <!-- 结果展示 -->
+                        <div class="result-card" id="result" style="display: none;">
+                            <h5 class="mb-3"><i class="bi bi-check-circle text-success"></i> 生成完成</h5>
+                            <div id="resultContent"></div>
+                        </div>
+                    </div>
+
+                    <!-- API配置 -->
+                    <div class="tab-pane fade" id="config">
+                        <h5 class="mb-3">API 配置状态</h5>
+
+                        <div id="configStatus">
+                            <div class="config-item not-configured">
+                                <span class="status-indicator error"></span>
+                                <strong>智谱 GLM-4V</strong> (图片分析) - <span class="text-muted">未配置</span>
+                            </div>
+                            <div class="config-item not-configured">
+                                <span class="status-indicator error"></span>
+                                <strong>可灵 AI</strong> (视频生成) - <span class="text-muted">未配置</span>
+                            </div>
+                            <div class="config-item not-configured">
+                                <span class="status-indicator error"></span>
+                                <strong>海螺 TTS</strong> (音频生成) - <span class="text-muted">未配置</span>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <h5 class="mb-3">配置 API Key</h5>
+                        <form id="configForm">
+                            <div class="mb-3">
+                                <label class="form-label">智谱 API Key</label>
+                                <input type="password" class="form-control" id="zhipuKey"
+                                       placeholder="输入智谱 API Key">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">可灵 API Key</label>
+                                <input type="password" class="form-control" id="klingKey"
+                                       placeholder="输入可灵 API Key">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">海螺/MiniMax API Key</label>
+                                <input type="password" class="form-control" id="minimaxKey"
+                                       placeholder="输入海螺 API Key">
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save"></i> 保存配置
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary ms-2" id="testBtn">
+                                <i class="bi bi-plug"></i> 测试连接
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 页脚 -->
+        <div class="text-center mt-4 text-white">
+            <a href="/" class="text-white">返回主页</a> |
+            <span>小红书 AI Agent v1.3.0</span>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadConfigStatus();
+            loadVoices();
+
+            // 添加图片按钮
+            document.getElementById('addImagesBtn').addEventListener('click', function() {
+                const urlInput = document.getElementById('imageUrls');
+                const urls = urlInput.value.split(',').map(u => u.trim()).filter(u => u);
+                const preview = document.getElementById('imagePreview');
+
+                urls.forEach(url => {
+                    if (url) {
+                        const img = document.createElement('img');
+                        img.src = url;
+                        img.className = 'preview-img';
+                        img.onerror = function() { this.style.display = 'none'; };
+                        preview.appendChild(img);
+                    }
+                });
+
+                urlInput.value = '';
+            });
+
+            // 提交表单
+            document.getElementById('videoForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+
+                const images = Array.from(document.querySelectorAll('.preview-img'))
+                    .map(img => img.src)
+                    .filter(src => src);
+
+                if (images.length === 0) {
+                    // 尝试从输入框获取
+                    const urlInput = document.getElementById('imageUrls').value;
+                    if (urlInput) {
+                        images.push(...urlInput.split(',').map(u => u.trim()).filter(u => u));
+                    }
+                }
+
+                if (images.length === 0) {
+                    alert('请至少添加一张产品图片');
+                    return;
+                }
+
+                const data = {
+                    images: images,
+                    product_name: document.getElementById('productName').value,
+                    context: document.getElementById('context').value,
+                    duration: parseInt(document.getElementById('duration').value),
+                    voice: document.getElementById('voice').value,
+                    auto_publish: document.getElementById('autoPublish').checked
+                };
+
+                // 显示加载状态
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('result').style.display = 'none';
+
+                try {
+                    const response = await fetch('/api/video/generate', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(data)
+                    });
+
+                    const result = await response.json();
+
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('result').style.display = 'block';
+
+                    if (result.status === 'completed') {
+                        document.getElementById('resultContent').innerHTML = `
+                            <div class="alert alert-success">
+                                <h6>视频生成成功！</h6>
+                                <p class="mb-1"><strong>耗时:</strong> ${result.duration.toFixed(1)}秒</p>
+                                <p class="mb-1"><strong>视频:</strong> ${result.output.video}</p>
+                                <p class="mb-0"><strong>脚本:</strong> ${result.output.script.title}</p>
+                            </div>
+                            <a href="${result.output.video}" target="_blank" class="btn btn-success">
+                                <i class="bi bi-download"></i> 下载视频
+                            </a>
+                        `;
+                    } else {
+                        document.getElementById('resultContent').innerHTML = `
+                            <div class="alert alert-danger">
+                                <h6>生成失败</h6>
+                                <p class="mb-0">${result.error || '未知错误'}</p>
+                            </div>
+                        `;
+                    }
+                } catch (error) {
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('result').style.display = 'block';
+                    document.getElementById('resultContent').innerHTML = `
+                        <div class="alert alert-danger">
+                            <h6>请求失败</h6>
+                            <p class="mb-0">${error.message}</p>
+                        </div>
+                    `;
+                }
+            });
+
+            // 配置表单提交
+            document.getElementById('configForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+
+                const data = {
+                    zhipu_api_key: document.getElementById('zhipuKey').value,
+                    kling_api_key: document.getElementById('klingKey').value,
+                    minimax_api_key: document.getElementById('minimaxKey').value
+                };
+
+                try {
+                    const response = await fetch('/api/video/config', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(data)
+                    });
+
+                    const result = await response.json();
+                    if (result.success) {
+                        alert('配置已保存');
+                        loadConfigStatus();
+                    }
+                } catch (error) {
+                    alert('保存失败: ' + error.message);
+                }
+            });
+
+            // 测试连接
+            document.getElementById('testBtn').addEventListener('click', async function() {
+                try {
+                    const response = await fetch('/api/video/test');
+                    const result = await response.json();
+
+                    let msg = '测试结果:\n';
+                    for (const [service, status] of Object.entries(result.status)) {
+                        msg += `${service}: ${status}\n`;
+                    }
+                    alert(msg);
+                } catch (error) {
+                    alert('测试失败: ' + error.message);
+                }
+            });
+        });
+
+        // 加载配置状态
+        async function loadConfigStatus() {
+            try {
+                const response = await fetch('/api/video/config');
+                const result = await response.json();
+
+                const container = document.getElementById('configStatus');
+                const config = result.config;
+
+                container.innerHTML = `
+                    <div class="config-item ${config.zhipu ? 'configured' : 'not-configured'}">
+                        <span class="status-indicator ${config.zhipu ? 'ok' : 'error'}"></span>
+                        <strong>智谱 GLM-4V</strong> (图片分析) - ${config.zhipu ? '<span class="text-success">已配置</span>' : '<span class="text-muted">未配置</span>'}
+                    </div>
+                    <div class="config-item ${config.kling ? 'configured' : 'not-configured'}">
+                        <span class="status-indicator ${config.kling ? 'ok' : 'error'}"></span>
+                        <strong>可灵 AI</strong> (视频生成) - ${config.kling ? '<span class="text-success">已配置</span>' : '<span class="text-muted">未配置</span>'}
+                    </div>
+                    <div class="config-item ${config.minimax ? 'configured' : 'not-configured'}">
+                        <span class="status-indicator ${config.minimax ? 'ok' : 'error'}"></span>
+                        <strong>海螺 TTS</strong> (音频生成) - ${config.minimax ? '<span class="text-success">已配置</span>' : '<span class="text-muted">未配置</span>'}
+                    </div>
+                `;
+            } catch (error) {
+                console.error('加载配置失败:', error);
+            }
+        }
+
+        // 加载音色列表
+        async function loadVoices() {
+            try {
+                const response = await fetch('/api/video/voices');
+                const result = await response.json();
+
+                if (result.success) {
+                    const select = document.getElementById('voice');
+                    const voices = result.voices;
+
+                    // 男声
+                    voices.male.forEach(v => {
+                        const opt = document.createElement('option');
+                        opt.value = v;
+                        opt.textContent = getVoiceName(v) + '（男）';
+                        select.appendChild(opt);
+                    });
+
+                    // 女声
+                    voices.female.forEach(v => {
+                        const opt = document.createElement('option');
+                        opt.value = v;
+                        opt.textContent = getVoiceName(v) + '（女）';
+                        select.appendChild(opt);
+                    });
+                }
+            } catch (error) {
+                console.error('加载音色失败:', error);
+            }
+        }
+
+        function getVoiceName(id) {
+            const names = {
+                'male-qn-qingse': '青涩青年',
+                'male-qn-jingying': '精英青年',
+                'male-qn-badao': '霸道总裁',
+                'male-qn-daqiao': '大乔',
+                'male-qn-xiaojie': '少年',
+                'female-shaonv': '活泼少女',
+                'female-yujie': '温柔御姐',
+                'female-chengshu': '成熟女性',
+                'female-badao': '霸道女总'
+            };
+            return names[id] || id;
+        }
+    </script>
+</body>
+</html>

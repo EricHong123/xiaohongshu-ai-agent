@@ -228,6 +228,104 @@ def create_app():
             'agent_initialized': agent is not None
         })
 
+    # ========== 视频生成工作流 ==========
+
+    @app.route('/video')
+    def video_page():
+        """视频生成页面"""
+        return render_template('video.html')
+
+    @app.route('/api/video/test', methods=['GET'])
+    def video_test():
+        """测试视频工作流组件"""
+        from xiaohongshu_agent.workflow import VideoWorkflow
+
+        try:
+            workflow = VideoWorkflow()
+            status = workflow.test()
+            return jsonify({'status': status, 'success': True})
+        except Exception as e:
+            logger.error(f"测试失败: {e}")
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/api/video/voices', methods=['GET'])
+    def video_voices():
+        """获取可用音色"""
+        from xiaohongshu_agent.workflow import AudioGenerator
+
+        try:
+            gen = AudioGenerator()
+            voices = gen.get_available_voices()
+            return jsonify({'voices': voices, 'success': True})
+        except Exception as e:
+            logger.error(f"获取音色失败: {e}")
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/api/video/generate', methods=['POST'])
+    def video_generate():
+        """生成视频"""
+        from xiaohongshu_agent.workflow import VideoWorkflow
+
+        data = request.json
+        images = data.get('images', [])
+        product_name = data.get('product_name', '')
+        context = data.get('context', '')
+        duration = data.get('duration', 10)
+        voice = data.get('voice', 'male-qn-qingse')
+        auto_publish = data.get('auto_publish', False)
+
+        if not images:
+            return jsonify({'error': '需要提供产品图片'}), 400
+
+        try:
+            workflow = VideoWorkflow(
+                output_dir="output/web_videos",
+                config={
+                    "zhipu_api_key": os.getenv("ZHIPU_API_KEY"),
+                    "kling_api_key": os.getenv("KLING_API_KEY"),
+                    "minimax_api_key": os.getenv("MINIMAX_API_KEY")
+                }
+            )
+
+            result = workflow.run(
+                image_paths=images,
+                product_name=product_name,
+                context=context,
+                duration=duration,
+                voice=voice,
+                auto_publish=auto_publish
+            )
+
+            return jsonify(result)
+        except Exception as e:
+            logger.error(f"视频生成失败: {e}")
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/api/video/config', methods=['GET', 'POST'])
+    def video_config():
+        """视频工作流配置"""
+        if request.method == 'POST':
+            data = request.json
+
+            if 'zhipu_api_key' in data:
+                os.environ['ZHIPU_API_KEY'] = data['zhipu_api_key']
+            if 'kling_api_key' in data:
+                os.environ['KLING_API_KEY'] = data['kling_api_key']
+            if 'minimax_api_key' in data:
+                os.environ['MINIMAX_API_KEY'] = data['minimax_api_key']
+
+            return jsonify({'success': True, 'message': '配置已保存'})
+
+        return jsonify({
+            'success': True,
+            'config': {
+                'zhipu': bool(os.getenv('ZHIPU_API_KEY')),
+                'kling': bool(os.getenv('KLING_API_KEY')),
+                'minimax': bool(os.getenv('MINIMAX_API_KEY'))
+            }
+        })
+
+
     @app.route('/api/channel/check_login', methods=['POST'])
     def check_login():
         """检查小红书登录状态"""
