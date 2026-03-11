@@ -62,7 +62,8 @@ class VideoWorkflow:
         )
 
         self.video_gen = VideoGenerator(
-            api_key=self.config.get("kling_api_key", os.getenv("KLING_API_KEY")),
+            access_key=self.config.get("kling_access_key", os.getenv("KLING_ACCESS_KEY")),
+            secret_key=self.config.get("kling_secret_key", os.getenv("KLING_SECRET_KEY")),
             model=self.config.get("video_model", "kling-v1")
         )
 
@@ -331,10 +332,10 @@ class VideoWorkflow:
             results["zhipu"] = f"❌ {str(e)}"
 
         # 测试可灵API
-        if os.getenv("KLING_API_KEY"):
+        if os.getenv("KLING_ACCESS_KEY"):
             results["kling"] = "✅ 已配置"
         else:
-            results["kling"] = "⚠️ 未配置 KLING_API_KEY"
+            results["kling"] = "⚠️ 未配置 KLING_ACCESS_KEY"
 
         # 测试海螺API
         if os.getenv("MINIMAX_API_KEY"):
