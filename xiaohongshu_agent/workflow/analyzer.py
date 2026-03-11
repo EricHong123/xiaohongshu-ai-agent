@@ -121,25 +121,14 @@ class ImageAnalyzer:
   "product_name": "产品名称",
   "product_features": ["特点1", "特点2", "特点3"],
   "target_audience": "目标人群",
-  "video_style": "视频风格",
-  "script": {
-    "title": "视频标题(吸引眼球的)",
-    "hook": "开场白(3秒,抓住注意力)",
-    "body": "主体内容(产品介绍和种草)",
-    "cta": "结尾呼吁(关注、点赞等)"
-  },
-  "shots": [
-    {"index": 1, "scene": "场景描述", "prompt": "AI视频生成提示词", "duration": 3},
-    {"index": 2, "scene": "场景描述", "prompt": "AI视频生成提示词", "duration": 4}
-  ]
+  "video_style": "视频风格"
 }
 ```
 
 要求：
-1. 脚本口语化,适合口播
-2. 每个分镜的prompt要详细,包含主体、场景、动作、光线等
-3. 整体时长控制在7-15秒
-4. 风格要符合小红书年轻女性受众
+1. 突出产品的核心特点和卖点
+2. 目标人群要精准
+3. 视频风格要符合小红书年轻女性审美
 """
 
         if product_name:

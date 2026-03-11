@@ -57,8 +57,8 @@ class VideoWorkflow:
         )
 
         self.script_gen = ScriptGenerator(
-            api_key=self.config.get("zhipu_api_key", os.getenv("ZHIPU_API_KEY")),
-            model=self.config.get("script_model", "glm-4-flash")
+            api_key=self.config.get("minimax_api_key", os.getenv("MINIMAX_API_KEY")),
+            model=self.config.get("script_model", "MiniMax-M2.5")
         )
 
         self.video_gen = VideoGenerator(

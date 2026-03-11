@@ -45,18 +45,18 @@ STYLE_MAPPING = {
 
 
 class ScriptGenerator:
-    """使用智谱GLM生成视频脚本 - 集成电商视频导演Skill"""
+    """使用MiniMax生成视频脚本 - 集成电商视频导演Skill"""
 
     def __init__(
         self,
         api_key: str = "",
         base_url: str = "",
-        model: str = "glm-4-flash"
+        model: str = "MiniMax-M2.5"
     ):
-        self.api_key = api_key or os.getenv("ZHIPU_API_KEY", "")
+        self.api_key = api_key or os.getenv("MINIMAX_API_KEY", "")
         self.base_url = base_url or os.getenv(
-            "ZHIPU_BASE_URL",
-            "https://open.bigmodel.cn/api/paas/v4"
+            "MINIMAX_BASE_URL",
+            "https://api.minimax.chat/v1"
         )
         self.model = model
 
@@ -97,11 +97,12 @@ class ScriptGenerator:
                 "messages": messages
             }
 
+            # MiniMax API 格式
             resp = requests.post(
-                f"{self.base_url}/chat/completions",
+                f"{self.base_url}/text/chatcompletion_v2",
                 headers=headers,
                 json=data,
-                timeout=60
+                timeout=120
             )
 
             result = resp.json()
@@ -161,11 +162,12 @@ class ScriptGenerator:
                 "messages": messages
             }
 
+            # MiniMax API 格式
             resp = requests.post(
-                f"{self.base_url}/chat/completions",
+                f"{self.base_url}/text/chatcompletion_v2",
                 headers=headers,
                 json=data,
-                timeout=60
+                timeout=120
             )
 
             result = resp.json()
