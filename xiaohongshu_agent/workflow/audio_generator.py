@@ -66,7 +66,7 @@ class AudioGenerator:
             "audio_setting": {
                 "sample_rate": 32000,
                 "bitrate": 128000,
-                "format": "mp3"
+                "format": "wav"
             }
         }
 
@@ -80,15 +80,37 @@ class AudioGenerator:
                 # 解码base64
                 audio_bytes = base64.b64decode(audio_data)
 
-                # 保存文件
+                # MiniMax返回的是PCM格式,需要添加WAV头
                 if output_path:
-                    with open(output_path, "wb") as f:
-                        f.write(audio_bytes)
-                    return {
-                        "status": "success",
-                        "output_path": output_path,
-                        "duration": result.get("data", {}).get("audio_size", 0)
-                    }
+                    # 保存为WAV格式
+                    wav_path = output_path.replace('.mp3', '.wav')
+                    try:
+                        import wave
+                        with wave.open(wav_path, 'wb') as wav_file:
+                            wav_file.setnchannels(1)  # 单声道
+                            wav_file.setsampwidth(2)  # 16位
+                            wav_file.setframerate(32000)  # 32kHz
+                            wav_file.writeframes(audio_bytes)
+                        
+                        # 同时保存原始PCM
+                        pcm_path = output_path.replace('.mp3', '.pcm')
+                        with open(pcm_path, 'wb') as f:
+                            f.write(audio_bytes)
+                        
+                        return {
+                            "status": "success",
+                            "output_path": wav_path,
+                            "duration": result.get("data", {}).get("audio_size", 0)
+                        }
+                    except Exception as e:
+                        # 如果WAV创建失败,保存原始数据
+                        with open(output_path, "wb") as f:
+                            f.write(audio_bytes)
+                        return {
+                            "status": "success",
+                            "output_path": output_path,
+                            "duration": result.get("data", {}).get("audio_size", 0)
+                        }
                 else:
                     return {
                         "status": "success",
@@ -132,7 +154,7 @@ class AudioGenerator:
         if not full_text.strip():
             return {"error": "脚本内容为空"}
 
-        output_path = os.path.join(output_dir, "audio.mp3")
+        output_path = os.path.join(output_dir, "audio.wav")
 
         result = self.generate(
             text=full_text,
