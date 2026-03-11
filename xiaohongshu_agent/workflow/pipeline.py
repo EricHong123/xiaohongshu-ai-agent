@@ -53,7 +53,7 @@ class VideoWorkflow:
         # 初始化各模块
         self.analyzer = ImageAnalyzer(
             api_key=self.config.get("zhipu_api_key", os.getenv("ZHIPU_API_KEY")),
-            model=self.config.get("image_analyzer_model", "glm-4-flash")
+            model=self.config.get("image_analyzer_model", "glm-4.6v")
         )
 
         self.script_gen = ScriptGenerator(
