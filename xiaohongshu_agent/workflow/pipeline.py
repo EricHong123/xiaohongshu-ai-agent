@@ -204,8 +204,11 @@ class VideoWorkflow:
                     video_url = wait_result.get("video_url", "")
                     # 下载视频
                     clip_path = self._download_video(video_url, f"clip_{i+1}.mp4")
-                    video_clips.append(clip_path)
-                    print(f"    ✅ 第{i+1}个分镜完成")
+                    if clip_path:
+                        video_clips.append(clip_path)
+                        print(f"    ✅ 第{i+1}个分镜完成")
+                    else:
+                        print(f"    ❌ 第{i+1}个分镜下载失败")
                 else:
                     print(f"    ❌ 第{i+1}个分镜失败: {wait_result.get('error', '未知错误')}")
             else:
