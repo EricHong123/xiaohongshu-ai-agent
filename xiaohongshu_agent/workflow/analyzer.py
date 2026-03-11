@@ -5,7 +5,6 @@ import os
 import base64
 import requests
 from typing import List, Dict, Any, Optional
-from pathlib import Path
 
 
 class ImageAnalyzer:

@@ -1,11 +1,8 @@
 """
 视频生成器 - 使用智谱CogVideoX
 """
-import os
 import time
-import requests
 from typing import List, Dict, Any, Optional
-from pathlib import Path
 
 
 class VideoGenerator:
