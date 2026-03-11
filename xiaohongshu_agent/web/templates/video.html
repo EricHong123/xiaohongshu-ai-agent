@@ -499,7 +499,7 @@
                 .then(r => r.json())
                 .then(data => {
                     const container = document.getElementById("videoLibrary");
-                    if (data.success function getVoiceName(id) {function getVoiceName(id) { data.videos.length > 0) {
+                    if (data.success && data.videos.length > 0) {
                         container.innerHTML = data.videos.map(v => `
                             <div class="card mb-3">
                                 <div class="card-body">
