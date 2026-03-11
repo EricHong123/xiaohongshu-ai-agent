@@ -87,3 +87,30 @@ def register_video_routes(app):
                 'minimax': bool(os.getenv('MINIMAX_API_KEY'))
             }
         })
+
+    @app.route('/api/video/list')
+    def video_list():
+        """获取视频列表"""
+        try:
+            videos = []
+            video_dirs = ["output/web_videos", "output/videos", "output/test_video"]
+            
+            for video_dir in video_dirs:
+                if os.path.exists(video_dir):
+                    for f in os.listdir(video_dir):
+                        if f.endswith('.mp4'):
+                            filepath = os.path.join(video_dir, f)
+                            stat = os.stat(filepath)
+                            videos.append({
+                                'name': f,
+                                'path': filepath,
+                                'size': stat.st_size,
+                                'time': stat.st_mtime
+                            })
+            
+            # 按时间排序
+            videos.sort(key=lambda x: x['time'], reverse=True)
+            
+            return jsonify({'videos': videos[:20], 'success': True})
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
