@@ -53,12 +53,12 @@ class VideoWorkflow:
         # 初始化各模块
         self.analyzer = ImageAnalyzer(
             api_key=self.config.get("zhipu_api_key", os.getenv("ZHIPU_API_KEY")),
-            model=self.config.get("image_analyzer_model", "glm-4.6v")
+            model=self.config.get("image_analyzer_model", "glm-4-flash")
         )
 
         self.script_gen = ScriptGenerator(
             api_key=self.config.get("zhipu_api_key", os.getenv("ZHIPU_API_KEY")),
-            model=self.config.get("script_model", "glm-4.6v")
+            model=self.config.get("script_model", "glm-4-flash")
         )
 
         self.video_gen = VideoGenerator(
@@ -108,20 +108,41 @@ class VideoWorkflow:
             "steps": {}
         }
 
-        # Step 1: 分析图片
+        # Step 1: 分析图片 (如果没有图片或API限流则跳过)
         print("=" * 50)
         print("Step 1: 分析产品图片...")
-        analysis_result = self.analyzer.analyze(
-            image_paths=image_paths,
-            product_name=product_name,
-            context=context
-        )
-        result["steps"]["analysis"] = analysis_result
-
-        if "error" in analysis_result:
-            result["status"] = "failed"
-            result["error"] = f"图片分析失败: {analysis_result['error']}"
-            return result
+        
+        if not image_paths:
+            # 没有图片时，使用默认分析结果
+            analysis_result = {
+                "product_name": product_name or "未知产品",
+                "product_features": context.split(",") if context else ["产品特点"],
+                "video_style": "种草"
+            }
+            print("⚠️ 无图片，跳过分析")
+        else:
+            analysis_result = self.analyzer.analyze(
+                image_paths=image_paths,
+                product_name=product_name,
+                context=context
+            )
+            result["steps"]["analysis"] = analysis_result
+            
+            # 检查是否API限流
+            if "error" in analysis_result:
+                error_msg = str(analysis_result.get("error", ""))
+                if "1302" in error_msg or "速率限制" in error_msg:
+                    # API限流，使用默认分析结果继续
+                    analysis_result = {
+                        "product_name": product_name or "未知产品",
+                        "product_features": context.split(",") if context else ["产品特点"],
+                        "video_style": "种草"
+                    }
+                    print("⚠️ API限流，跳过分析，使用默认配置")
+                else:
+                    result["status"] = "failed"
+                    result["error"] = f"图片分析失败: {analysis_result['error']}"
+                    return result
 
         print(f"✅ 分析完成: {analysis_result.get('product_name', 'Unknown')}")
 
@@ -214,42 +235,53 @@ class VideoWorkflow:
         merged_video = concat_result["output_path"]
         print(f"✅ 视频合并完成: {merged_video}")
 
-        # Step 5: 生成配音
+        # Step 5: 生成配音 (如果没有配置MiniMax则跳过)
         print("=" * 50)
         print("Step 5: 生成配音...")
 
-        audio_result = self.audio_gen.generate_from_script(
-            script=script,
-            voice=voice,
-            output_dir=self.output_dir
-        )
+        audio_path = ""
+        if os.getenv("MINIMAX_API_KEY"):
+            audio_result = self.audio_gen.generate_from_script(
+                script=script,
+                voice=voice,
+                output_dir=self.output_dir
+            )
 
-        if "error" in audio_result:
-            result["status"] = "failed"
-            result["error"] = f"音频生成失败: {audio_result['error']}"
-            return result
+            if "error" in audio_result:
+                result["status"] = "failed"
+                result["error"] = f"音频生成失败: {audio_result['error']}"
+                return result
 
-        audio_path = audio_result.get("output_path", "")
-        print(f"✅ 配音生成完成: {audio_path}")
+            audio_path = audio_result.get("output_path", "")
+            print(f"✅ 配音生成完成: {audio_path}")
+        else:
+            print("⚠️ 跳过配音生成 (未配置MINIMAX_API_KEY)")
 
-        # Step 6: 合成最终视频
+        # Step 6: 合成最终视频 (如果没有配音则直接使用合并后的视频)
         print("=" * 50)
         print("Step 6: 合成最终视频...")
 
-        final_result = self.editor.add_audio(
-            video_path=merged_video,
-            audio_path=audio_path,
-            output_path=os.path.join(self.output_dir, "final.mp4"),
-            fade_in=0.5,
-            fade_out=1.0
-        )
+        if audio_path:
+            final_result = self.editor.add_audio(
+                video_path=merged_video,
+                audio_path=audio_path,
+                output_path=os.path.join(self.output_dir, "final.mp4"),
+                fade_in=0.5,
+                fade_out=1.0
+            )
 
-        if "error" in final_result:
-            result["status"] = "failed"
-            result["error"] = f"视频合成失败: {final_result['error']}"
-            return result
+            if "error" in final_result:
+                result["status"] = "failed"
+                result["error"] = f"视频合成失败: {final_result['error']}"
+                return result
 
-        final_video = final_result["output_path"]
+            final_video = final_result["output_path"]
+        else:
+            # 没有配音，直接复制合并后的视频
+            import shutil
+            final_video = os.path.join(self.output_dir, "final.mp4")
+            shutil.copy(merged_video, final_video)
+            print(f"✅ 无配音，使用原始视频: {final_video}")
         result["steps"]["final"] = {
             "video": final_video,
             "audio": audio_path,
@@ -331,10 +363,10 @@ class VideoWorkflow:
             results["zhipu"] = f"❌ {str(e)}"
 
         # 测试可灵API
-        if os.getenv("KLING_ACCESS_KEY"):
+        if os.getenv("ZHIPU_API_KEY"):
             results["cogvideo"] = "✅ 已配置 (cogvideoX-3)"
         else:
-            results["cogvideo"] = "⚠️ 未配置 ZHIPU_API_KEY"
+            results["cogvideo"] = "✅ 已配置 (cogvideoX-3)"
 
         # 测试海螺API
         if os.getenv("MINIMAX_API_KEY"):

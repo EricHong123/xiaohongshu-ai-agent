@@ -15,7 +15,7 @@ class ImageAnalyzer:
         self,
         api_key: str = "",
         base_url: str = "",
-        model: str = "glm-4.6v"
+        model: str = "glm-4-flash"
     ):
         self.api_key = api_key or os.getenv("ZHIPU_API_KEY", "")
         self.base_url = base_url or os.getenv(
@@ -31,7 +31,7 @@ class ImageAnalyzer:
 
     def _read_image_url(self, url: str) -> str:
         """从URL读取图片并编码"""
-        response = requests.get(url, timeout=30)
+        response = requests.get(url, timeout=60)
         return base64.b64encode(response.content).decode("utf-8")
 
     def analyze(
