@@ -2,8 +2,11 @@
 视频生成工作流 API 模块
 """
 import os
-from flask import jsonify, request
+from flask import jsonify, request, send_from_directory
 from xiaohongshu_agent.workflow import VideoWorkflow
+
+# 项目根目录
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 def register_video_routes(app):
@@ -96,14 +99,16 @@ def register_video_routes(app):
             video_dirs = ["output/web_videos", "output/videos", "output/test_video"]
             
             for video_dir in video_dirs:
-                if os.path.exists(video_dir):
-                    for f in os.listdir(video_dir):
+                full_dir = os.path.join(PROJECT_ROOT, video_dir)
+                if os.path.exists(full_dir):
+                    for f in os.listdir(full_dir):
                         if f.endswith('.mp4'):
-                            filepath = os.path.join(video_dir, f)
+                            filepath = os.path.join(full_dir, f)
                             stat = os.stat(filepath)
                             videos.append({
                                 'name': f,
-                                'path': filepath,
+                                'path': os.path.join(video_dir, f),
+                                'dir': video_dir,
                                 'size': stat.st_size,
                                 'time': stat.st_mtime
                             })
@@ -114,3 +119,22 @@ def register_video_routes(app):
             return jsonify({'videos': videos[:20], 'success': True})
         except Exception as e:
             return jsonify({'error': str(e)}), 500
+
+    # 服务视频文件
+    @app.route('/files/<path:subpath>')
+    def serve_file(subpath):
+        """服务文件下载"""
+        # 安全检查
+        if '..' in subpath or subpath.startswith('/'):
+            return "Forbidden", 403
+        
+        # 使用项目根目录
+        full_path = os.path.join(PROJECT_ROOT, subpath)
+        
+        # 确保文件存在
+        if not os.path.exists(full_path):
+            return "File not found", 404
+        
+        directory = os.path.dirname(full_path)
+        filename = os.path.basename(full_path)
+        return send_from_directory(directory, filename)
