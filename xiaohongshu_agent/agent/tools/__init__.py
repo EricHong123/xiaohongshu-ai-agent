@@ -9,6 +9,7 @@ from xiaohongshu_agent.agent.tools.registry import ToolRegistry, registry, regis
 from xiaohongshu_agent.agent.tools import filesystem
 from xiaohongshu_agent.agent.tools import shell
 from xiaohongshu_agent.agent.tools import web
+from xiaohongshu_agent.agent.tools import xhs  # noqa: F401
 
 __all__ = [
     "Tool",
