@@ -4,7 +4,6 @@
 import os
 import subprocess
 from typing import List, Dict, Any, Optional
-from pathlib import Path
 
 
 class VideoEditor:
@@ -43,7 +42,16 @@ class VideoEditor:
             list_path = os.path.join(self.output_dir, "video_list.txt")
             with open(list_path, "w") as f:
                 for path in video_paths:
-                    f.write(f"file '{path}'\n")
+                    if not path:
+                        continue
+                    # 如果是绝对路径或包含output_dir前缀,提取文件名
+                    if os.path.isabs(path):
+                        filename = os.path.basename(path)
+                    elif self.output_dir and path.startswith(self.output_dir):
+                        filename = path[len(self.output_dir)+1:]
+                    else:
+                        filename = os.path.basename(path)
+                    f.write(f"file '{filename}'\n")
 
             # FFmpeg合并命令
             cmd = [

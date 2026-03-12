@@ -1,6 +1,7 @@
 # 🤖 小红书 AI Agent
 
 一个强大的小红书运营 AI Agent 框架，支持搜索、发布、AI 对话、记忆等功能。
+<img width="2880" height="1626" alt="image" src="https://github.com/user-attachments/assets/247dd28e-4f79-478e-867c-dd249150f5c0" />
 
 ## ✨ 功能特性
 
@@ -276,7 +277,7 @@ print(f"视频: {result['output']['video']}")
 
 - **OpenAI**: gpt-4o, gpt-4o-mini, gpt-4-turbo, gpt-4, gpt-3.5-turbo
 - **Anthropic**: claude-sonnet-4, claude-4-opus, claude-3-opus, claude-3-sonnet, claude-3-haiku
-- **智谱 GLM**: glm-4, glm-4-flash, glm-4-plus, glm-3-turbo
+- **智谱 GLM**: glm-4, glm-4-flash, glm-4-plus, glm-4.6v, glm-3-turbo
 - **Kimi**: kimi-flash-1.5, kimi-pro-1.5, kimi-flash, kimi-pro
 - **Minimax**: minimax-m2.5, abab6.5s-chat, abab6.5-chat, abab5.5s-chat
 - **Gemini**: gemini-2.0-flash, gemini-1.5-pro, gemini-1.5-flash
@@ -348,6 +349,15 @@ python3 -m xiaohongshu_agent --config
 - 权限设置
 
 ## 📝 更新日志
+
+### v1.3.1 (2026-03-11)
+- 视频生成集成电商导演Skill专业分镜头模板
+- 支持7/10/15秒多种视频时长
+- 自动适配美妆/数码/家居等风格配置
+- Web UI优化，首页添加视频生成入口
+- 支持智谱CogVideoX-3视频生成
+- API速率限制自动跳过逻辑
+- 图片分析模型升级为 glm-4.6v
 
 ### v1.3.0 (2026-03-11)
 - 新增视频生成工作流模块

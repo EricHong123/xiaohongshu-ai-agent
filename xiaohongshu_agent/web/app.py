@@ -36,7 +36,7 @@ def create_app():
         message = data.get('message', '')
 
         if not message:
-            return jsonify({'error': '消息不能为空'}), 400
+            return jsonify({'success': False, 'error': '消息不能为空'}), 400
 
         try:
             if agent is None:
@@ -46,7 +46,7 @@ def create_app():
             return jsonify({'response': response, 'success': True})
         except Exception as e:
             logger.error(f"对话失败: {e}")
-            return jsonify({'error': str(e)}), 500
+            return jsonify({'success': False, 'error': str(e)}), 500
 
     @app.route('/api/search', methods=['POST'])
     def search():
@@ -57,7 +57,7 @@ def create_app():
         keyword = data.get('keyword', '')
 
         if not keyword:
-            return jsonify({'error': '关键词不能为空'}), 400
+            return jsonify({'success': False, 'error': '关键词不能为空'}), 400
 
         try:
             if agent is None:
@@ -67,7 +67,7 @@ def create_app():
             return jsonify({'posts': posts, 'success': True})
         except Exception as e:
             logger.error(f"搜索失败: {e}")
-            return jsonify({'error': str(e)}), 500
+            return jsonify({'success': False, 'error': str(e)}), 500
 
     @app.route('/api/publish', methods=['POST'])
     def publish():
@@ -81,7 +81,7 @@ def create_app():
         tags = data.get('tags', [])
 
         if not images:
-            return jsonify({'error': '需要图片'}), 400
+            return jsonify({'success': False, 'error': '需要图片'}), 400
 
         try:
             if agent is None:
@@ -91,7 +91,7 @@ def create_app():
             return jsonify(result)
         except Exception as e:
             logger.error(f"发布失败: {e}")
-            return jsonify({'error': str(e)}), 500
+            return jsonify({'success': False, 'error': str(e)}), 500
 
     @app.route('/api/generate', methods=['POST'])
     def generate_content():
@@ -109,7 +109,7 @@ def create_app():
             return jsonify({'content': content, 'success': True})
         except Exception as e:
             logger.error(f"生成内容失败: {e}")
-            return jsonify({'error': str(e)}), 500
+            return jsonify({'success': False, 'error': str(e)}), 500
 
     @app.route('/api/stats')
     def stats():
@@ -124,7 +124,7 @@ def create_app():
             return jsonify({'stats': stats, 'success': True})
         except Exception as e:
             logger.error(f"获取统计失败: {e}")
-            return jsonify({'error': str(e)}), 500
+            return jsonify({'success': False, 'error': str(e)}), 500
 
     @app.route('/api/config', methods=['GET', 'POST'])
     def config():
@@ -191,7 +191,7 @@ def create_app():
             })
         except Exception as e:
             logger.error(f"获取记忆失败: {e}")
-            return jsonify({'error': str(e)}), 500
+            return jsonify({'success': False, 'error': str(e)}), 500
 
     @app.route('/api/memory/clear', methods=['POST'])
     def clear_memory():
@@ -206,7 +206,7 @@ def create_app():
             return jsonify({'success': True, 'message': '已清空'})
         except Exception as e:
             logger.error(f"清空记忆失败: {e}")
-            return jsonify({'error': str(e)}), 500
+            return jsonify({'success': False, 'error': str(e)}), 500
 
     @app.route('/api/agent/init', methods=['POST'])
     def init_agent_api():
@@ -218,7 +218,7 @@ def create_app():
             return jsonify({'success': True, 'message': 'Agent 已初始化'})
         except Exception as e:
             logger.error(f"初始化失败: {e}")
-            return jsonify({'error': str(e)}), 500
+            return jsonify({'success': False, 'error': str(e)}), 500
 
     @app.route('/api/health')
     def health():

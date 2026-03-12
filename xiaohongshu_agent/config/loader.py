@@ -24,8 +24,8 @@ PROVIDERS_INFO = {
     "zhipu": {
         "name": "智谱 GLM",
         "env_key": "ZHIPU_API_KEY",
-        "models": ["glm-4", "glm-4-flash", "glm-4-plus", "glm-3-turbo"],
-        "default_model": "glm-4",
+        "models": ["glm-4", "glm-4-flash", "glm-4-plus", "glm-3-turbo", "glm-4.6v", "glm-4v-flash"],
+        "default_model": "glm-4.6v",
     },
     "kimi": {
         "name": "Kimi",

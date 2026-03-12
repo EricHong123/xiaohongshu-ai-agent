@@ -7,6 +7,7 @@ import sqlite3
 from datetime import datetime
 from typing import List, Dict, Any
 
+from xiaohongshu_agent.domain import Stats
 
 class Database:
     """SQLite 数据库"""
@@ -179,7 +180,7 @@ class Database:
         self.conn.commit()
 
     # ===== 统计 =====
-    def get_stats(self) -> Dict:
+    def get_stats(self) -> Stats:
         """获取统计"""
         cursor = self.conn.cursor()
 
@@ -198,13 +199,13 @@ class Database:
         cursor.execute("SELECT COUNT(*) FROM knowledge")
         knowledge = cursor.fetchone()[0] or 0
 
-        return {
-            "published_posts": published,
-            "total_likes": total_likes,
-            "total_comments": total_comments,
-            "replied_comments": replied,
-            "knowledge_items": knowledge
-        }
+        return Stats(
+            published_posts=int(published),
+            total_likes=int(total_likes),
+            total_comments=int(total_comments),
+            replied_comments=int(replied),
+            knowledge_items=int(knowledge),
+        )
 
     def close(self):
         """关闭连接"""

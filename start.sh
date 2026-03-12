@@ -5,6 +5,26 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
+# #region agent log
+agent_log() {
+  # NDJSON debug log (no secrets)
+  local event="$1"
+  shift || true
+  local log_dir="${SCRIPT_DIR}/.cursor"
+  mkdir -p "$log_dir" 2>/dev/null || true
+  local log_path="${log_dir}/debug-d2d076.log"
+  echo "[debug] SCRIPT_DIR=$SCRIPT_DIR event=$event log_path=$log_path" 1>&2
+  # Always write at least one NDJSON line using bash only.
+  # (This guarantees evidence even if python3 is missing/broken.)
+  local ts
+  ts="$(date +%s 2>/dev/null || echo 0)"
+  printf '%s\n' "{\"sessionId\":\"d2d076\",\"runId\":\"post-fix\",\"hypothesisId\":\"H1\",\"location\":\"start.sh:agent_log\",\"message\":\"start.sh invoked\",\"data\":{\"event\":\"${event}\"},\"timestamp\":${ts}}" >> "$log_path" 2>/dev/null || true
+
+  # Best-effort richer payload (keeps existing behavior if python3 works).
+  DEBUG_EVENT="$event" DEBUG_ARGS="$*" DEBUG_LOG_PATH="$log_path" python3 -c "import json,os,time;payload={'sessionId':'d2d076','runId':'post-fix','hypothesisId':'H1','location':'start.sh:agent_log','message':'start.sh invoked','data':{'event':os.environ.get('DEBUG_EVENT'),'argsRaw':os.environ.get('DEBUG_ARGS',''),'logPath':os.environ.get('DEBUG_LOG_PATH')},'timestamp':int(time.time()*1000)};open(os.environ['DEBUG_LOG_PATH'],'a',encoding='utf-8').write(json.dumps(payload,ensure_ascii=False)+'\\n')" 2>/dev/null || true
+}
+# #endregion
+
 # 加载环境变量
 if [ -f "config/.env" ]; then
     export $(cat config/.env | grep -v '^#' | xargs)
@@ -19,23 +39,34 @@ COMMAND=${1:-gui}
 
 case "$COMMAND" in
     gui)
-        exec python3 src/cli.py --gui "$@"
+        shift
+        agent_log "gui" "$@"
+        exec python3 -m xiaohongshu_agent --gui "$@"
         ;;
     search|-s)
         shift
-        exec python3 src/cli.py --search "$@"
+        agent_log "search" "$@"
+        exec python3 -m xiaohongshu_agent --search "$@"
         ;;
     stats)
-        exec python3 src/cli.py --stats
+        shift
+        agent_log "stats"
+        exec python3 -m xiaohongshu_agent --stats
         ;;
     chat|-c)
-        exec python3 src/cli.py --chat
+        shift
+        agent_log "chat"
+        exec python3 -m xiaohongshu_agent --chat
         ;;
     config)
-        exec python3 src/cli.py --config
+        shift
+        agent_log "config"
+        exec python3 -m xiaohongshu_agent --config
         ;;
     setup)
-        exec python3 src/setup.py
+        shift
+        agent_log "setup"
+        exec python3 -m xiaohongshu_agent --gui
         ;;
     -h|--help|help|*)
         echo "小红书 AI Agent CLI"

@@ -3,7 +3,7 @@
 启动时检查配置完整性
 """
 import os
-from typing import Dict, List, Any, Optional
+from typing import Any, Dict, List, Optional
 from dataclasses import dataclass
 
 from xiaohongshu_agent.utils.logger import get_logger
@@ -29,7 +29,7 @@ class ConfigValidator:
         self.config = config
 
     def validate(self) -> ValidationResult:
-        """执行完整验证"""
+        """执行纯本地验证（不触网）"""
         errors = []
         warnings = []
         info = {}
@@ -48,7 +48,8 @@ class ConfigValidator:
             info["api_key_configured"] = False
         else:
             info["api_key_configured"] = True
-            info["api_key_prefix"] = f"{api_key[:8]}..."
+            # 不记录任何可用于回溯的 Key 片段
+            info["api_key_prefix"] = "***"
 
         # 3. 验证模型
         model = self.config.get_model()
@@ -87,9 +88,12 @@ class ConfigValidator:
         )
 
     def validate_api_key(self, provider: str = None) -> bool:
-        """验证 API Key 是否有效"""
-        import requests
+        """
+        验证 API Key 是否有效（可能触发外部请求）。
 
+        为了避免在启动时误触网，建议优先使用 `validate()`，
+        只有在需要“连通性/有效性”检查时再显式调用本方法或 `validate_connectivity()`。
+        """
         provider = provider or self.config.get("llm_provider", "openai")
         api_key = self.config.get_api_key()
 
@@ -97,32 +101,41 @@ class ConfigValidator:
             return False
 
         try:
-            if provider == "openai":
-                resp = requests.get(
-                    "https://api.openai.com/v1/models",
-                    headers={"Authorization": f"Bearer {api_key}"},
-                    timeout=5
-                )
-                return resp.status_code == 200
+            from xiaohongshu_agent.config.api_key_validator import validate_api_key
 
-            elif provider == "anthropic":
-                resp = requests.get(
-                    "https://api.anthropic.com/v1/messages",
-                    headers={
-                        "x-api-key": api_key,
-                        "anthropic-version": "2023-06-01"
-                    },
-                    timeout=5
-                )
-                # Anthropic 用 HEAD 请求
-                return True  # 简化处理
-
-            # 其他提供商简化处理
-            return bool(api_key)
-
+            result = validate_api_key(provider=provider, api_key=api_key)
+            return result.ok
         except Exception as e:
             logger.warning(f"API Key 验证失败: {e}")
             return False
+
+    def validate_connectivity(self, provider: str = None) -> ValidationResult:
+        """
+        外部连通性/有效性验证（可能触发外部请求）。
+
+        - 当前仅检查 API Key 是否“看起来可用/可连通”
+        - 不会被 `validate()` 自动调用，需显式调用
+        """
+        errors: List[str] = []
+        warnings: List[str] = []
+        info: Dict[str, Any] = {}
+
+        provider = provider or self.config.get("llm_provider", "openai")
+        info["provider"] = provider
+
+        api_key = self.config.get_api_key()
+        info["api_key_configured"] = bool(api_key)
+
+        if not api_key:
+            warnings.append("未配置 API Key")
+            return ValidationResult(success=True, errors=errors, warnings=warnings, info=info)
+
+        ok = self.validate_api_key(provider=provider)
+        info["api_key_valid"] = ok
+        if not ok:
+            errors.append("API Key 验证失败或不可用")
+
+        return ValidationResult(success=len(errors) == 0, errors=errors, warnings=warnings, info=info)
 
 
 def validate_config(config: "Config") -> ValidationResult:
@@ -131,4 +144,10 @@ def validate_config(config: "Config") -> ValidationResult:
     return validator.validate()
 
 
-__all__ = ["ConfigValidator", "ValidationResult", "validate_config"]
+def validate_connectivity(config: "Config", provider: str = None) -> ValidationResult:
+    """外部连通性验证的便捷函数（可能触发外部请求）"""
+    validator = ConfigValidator(config)
+    return validator.validate_connectivity(provider=provider)
+
+
+__all__ = ["ConfigValidator", "ValidationResult", "validate_config", "validate_connectivity"]

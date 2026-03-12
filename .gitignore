@@ -39,3 +39,4 @@ data/*
 # 临时文件
 *.tmp
 *.bak
+output/

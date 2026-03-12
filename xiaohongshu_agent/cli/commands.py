@@ -2,8 +2,9 @@
 命令行命令 - 增强版
 支持键盘上下选择
 """
-import os
 import sys
+from pathlib import Path
+from datetime import datetime
 import typer
 from typing import Optional
 from rich.console import Console
@@ -164,27 +165,13 @@ def main(
         from xiaohongshu_agent.cli.video_commands import video_app
         video_app()
         return
-
-    from xiaohongshu_agent import XiaohongshuAgent
+    from xiaohongshu_agent.bootstrap.build_agent import build_agent
     from xiaohongshu_agent.config import load_config
-    from xiaohongshu_agent.providers import get_available_providers
 
     cfg = load_config()
-    api_key = cfg.get_api_key()
-    model = cfg.get_model()
-    provider = cfg.get("llm_provider", "openai")
-    mcp_url = cfg.get("mcp_url", "http://localhost:18060/mcp")
-
-    if api_key:
-        os.environ[f"{provider.upper()}_API_KEY"] = api_key
 
     console.print("\n[cyan]初始化 Agent...[/cyan]")
-    agent = XiaohongshuAgent(
-        provider=provider,
-        model=model,
-        api_key=api_key,
-        mcp_url=mcp_url,
-    )
+    agent = build_agent()
 
     if config:
         show_config(agent, cfg)
@@ -207,7 +194,7 @@ def show_config(agent, cfg):
 
     api_key = cfg.get_api_key()
     if api_key:
-        console.print(f"  🔑 API: [green]{api_key[:8]}...{api_key[-4:]}[/green]")
+        console.print("  🔑 API: [green]已设置[/green]")
     else:
         console.print(f"  🔑 API: [red]未设置[/red]")
 
@@ -218,26 +205,30 @@ def show_config(agent, cfg):
 def do_search(agent, keyword):
     """搜索"""
     console.print(f"\n[cyan]搜索: {keyword}[/cyan]")
-    posts = agent.search(keyword)
+    from xiaohongshu_agent.apps.xhs.usecases import search_posts
+
+    posts = search_posts(agent, keyword)
 
     if posts:
         console.print(f"\n[green]找到 {len(posts)} 条结果:[/green]\n")
         for i, p in enumerate(posts[:10], 1):
-            console.print(f"  {i}. [yellow]{p.get('title', '')[:40]}[/yellow]")
-            console.print(f"      👍 {p.get('likes', 0):,}  💬 {p.get('comments', 0):,}  ⭐ {p.get('collects', 0):,}\n")
+            console.print(f"  {i}. [yellow]{p.title[:40]}[/yellow]")
+            console.print(f"      👍 {p.likes:,}  💬 {p.comments:,}  ⭐ {p.collects:,}\n")
     else:
         console.print("[yellow]未找到结果[/yellow]")
 
 
 def do_stats(agent):
     """统计"""
-    stats = agent.get_stats()
+    from xiaohongshu_agent.apps.xhs.usecases import get_stats
+
+    stats = get_stats(agent)
 
     console.print("\n[bold cyan]📊 数据统计[/bold cyan]")
-    console.print(f"  📝 已发布: [green]{stats['published_posts']}[/green] 篇")
-    console.print(f"  👍 总点赞: [red]{stats['total_likes']}[/red]")
-    console.print(f"  💬 总评论: [blue]{stats['total_comments']}[/blue]")
-    console.print(f"  ⭐ 已回复: [yellow]{stats['replied_comments']}[/yellow]")
+    console.print(f"  📝 已发布: [green]{stats.published_posts}[/green] 篇")
+    console.print(f"  👍 总点赞: [red]{stats.total_likes}[/red]")
+    console.print(f"  💬 总评论: [blue]{stats.total_comments}[/blue]")
+    console.print(f"  ⭐ 已回复: [yellow]{stats.replied_comments}[/yellow]")
 
 
 def do_chat(agent):
@@ -245,6 +236,8 @@ def do_chat(agent):
     console.print("\n[bold magenta]🤖 AI 对话模式[/bold magenta]")
     console.print("  输入内容让 AI 帮你处理")
     console.print("  输入 'exit' 或 'q' 退出\n")
+
+    from xiaohongshu_agent.apps.xhs.usecases import chat
 
     while True:
         try:
@@ -256,13 +249,93 @@ def do_chat(agent):
             if user_input.lower() in ['exit', 'q', 'quit']:
                 break
 
-            response = agent.chat(user_input)
+            response = chat(agent, user_input)
             console.print(f"\n[magenta]🤖 AI[/magenta]: {response}\n")
 
         except KeyboardInterrupt:
             break
         except Exception as e:
             console.print(f"[red]错误: {e}[/red]")
+
+
+def do_video_menu():
+    """视频工作流子菜单：生成视频 / 配置 API Key"""
+    menu_items = [
+        "🎬 生成视频",
+        "📂 查看输出视频",
+        "🔑 配置视频工作流 API Key / 模型",
+        "⬅ 返回主菜单",
+    ]
+
+    from pathlib import Path as _Path
+    import subprocess as _subprocess
+
+    def _view_video_outputs():
+        """列出并打开输出目录（默认 Finder）"""
+        console.print("\n[bold cyan]📂 已生成的视频文件[/bold cyan]\n")
+
+        # 兼容从项目根目录或任意目录启动 CLI 的情况
+        candidates = [
+            _Path.cwd() / "output" / "videos",
+            _Path(__file__).resolve().parent.parent.parent / "output" / "videos",
+        ]
+        dir_path = next((p for p in candidates if p.exists()), None)
+
+        if not dir_path:
+            console.print("[yellow]暂未找到输出目录 output/videos，请先生成一次视频。[/yellow]")
+            return
+
+        files = sorted(
+            [p for p in dir_path.glob("*.mp4") if p.is_file()],
+            key=lambda p: p.stat().st_mtime,
+            reverse=True,
+        )
+
+        if not files:
+            console.print(f"[yellow]目录中暂时没有 mp4 视频文件: {dir_path}[/yellow]")
+            # 仍然打开目录，方便你确认是否有其它输出
+            try:
+                if sys.platform == "darwin":
+                    _subprocess.run(["open", str(dir_path)], check=False)
+                elif sys.platform.startswith("win"):
+                    _subprocess.run(["cmd", "/c", "start", "", str(dir_path)], check=False)
+                else:
+                    _subprocess.run(["xdg-open", str(dir_path)], check=False)
+            except Exception:
+                pass
+            return
+
+        console.print(f"[green]目录: {dir_path}[/green]\n")
+        for idx, f in enumerate(files[:20], 1):
+            mtime = datetime.fromtimestamp(f.stat().st_mtime).strftime("%Y-%m-%d %H:%M:%S")
+            console.print(f"{idx}. {f.name}  [dim]({mtime})[/dim]")
+            console.print(f"    路径: {f}")
+
+        # 直接打开输出目录（macOS: Finder）
+        try:
+            if sys.platform == "darwin":
+                _subprocess.run(["open", str(dir_path)], check=False)
+            elif sys.platform.startswith("win"):
+                _subprocess.run(["cmd", "/c", "start", "", str(dir_path)], check=False)
+            else:
+                _subprocess.run(["xdg-open", str(dir_path)], check=False)
+            console.print("\n[green]已打开输出目录。[/green]")
+        except Exception as e:
+            console.print(f"[red]打开目录失败: {e}[/red]")
+            console.print(f"[dim]你仍可手动打开该路径: {dir_path}[/dim]")
+
+        console.print("\n[dim]提示：如需直接播放，复制上面某个 mp4 的路径到系统播放器打开即可。[/dim]")
+
+    while True:
+        choice = select_option("视频工作流", menu_items)
+        if choice is None or choice == 3:
+            break
+        elif choice == 0:
+            run_video_workflow_menu()
+        elif choice == 1:
+            _view_video_outputs()
+        elif choice == 2:
+            configure_video_env_keys()
 
 
 def do_gui(agent, cfg):
@@ -272,6 +345,7 @@ def do_gui(agent, cfg):
     menu_items = [
         "🔍 搜索热门帖子",
         "📝 创建并发布帖子",
+        "🎬 视频生成工作流",
         "📊 查看数据统计",
         "🤖 AI 对话",
         "⚙️ 系统设置",
@@ -291,7 +365,7 @@ def do_gui(agent, cfg):
 
         choice = select_option("请选择操作", menu_items)
 
-        if choice is None or choice == 5:
+        if choice is None or choice == 6:
             console.print("\n[cyan]再见! 👋[/cyan]\n")
             break
         elif choice == 0:
@@ -299,10 +373,12 @@ def do_gui(agent, cfg):
         elif choice == 1:
             do_publish_menu(agent)
         elif choice == 2:
-            do_stats(agent)
+            do_video_menu()
         elif choice == 3:
-            do_chat(agent)
+            do_stats(agent)
         elif choice == 4:
+            do_chat(agent)
+        elif choice == 5:
             do_settings_menu(agent, cfg)
 
 
@@ -324,17 +400,201 @@ def do_publish_menu(agent):
         return
 
     console.print("[cyan]AI 生成内容中...[/cyan]")
-    content = agent.generate_content(keyword)
+    from xiaohongshu_agent.apps.xhs.usecases import generate_content
+
+    content = generate_content(agent, keyword)
 
     console.print(f"\n[green]标题:[/green] {content.get('title')}")
     console.print(f"[green]标签:[/green] {' '.join(['#' + t for t in content.get('tags', [])])}")
 
     if confirm_dialog("确认发布", "确定要发布这篇帖子吗?"):
-        result = agent.publish(content.get('title'), content.get('content'), images, content.get('tags'))
-        if result.get("success"):
+        from xiaohongshu_agent.apps.xhs.usecases import publish_post
+
+        result = publish_post(
+            agent,
+            title=content.get("title"),
+            content=content.get("content"),
+            images=images,
+            tags=content.get("tags"),
+        )
+        if result.success:
             console.print("[green]发布成功! 🎉[/green]")
         else:
-            console.print(f"[red]发布失败: {result.get('error')}[/red]")
+            console.print(f"[red]发布失败: {result.error or '未知错误'}[/red]")
+
+
+def do_video_workflow_help():
+    """视频生成工作流入口说明"""
+    console.print("\n[bold cyan]🎬 视频生成工作流[/bold cyan]\n")
+    console.print("[yellow]当前版本通过命令行使用视频工作流。[/yellow]\n")
+    console.print("示例：\n")
+    console.print(
+        "  [green]python3 -m xiaohongshu_agent --video create "
+        "--images \"img1.jpg,img2.jpg\" --product \"护肤品\" --duration 10[/green]\n"
+    )
+    console.print("[dim]提示：视频工作流使用 config/.env 中的 ZHIPU_API_KEY / MINIMAX_API_KEY / KLING_API_KEY 及相关模型配置。[/dim]\n")
+
+
+def run_video_workflow_menu():
+    """在 CLI 中交互式启动视频生成工作流"""
+    from xiaohongshu_agent.workflow import VideoWorkflow
+
+    do_video_workflow_help()
+
+    # 尝试加载 config/.env 以确保工作流用到最新 Key/模型
+    try:
+        from dotenv import load_dotenv
+
+        base = Path(__file__).resolve().parent.parent.parent
+        env_path = base / "config" / ".env"
+        if env_path.exists():
+            load_dotenv(env_path, override=True)
+    except Exception:
+        pass
+
+    console.print("\n[bold cyan]🎬 启动视频生成工作流[/bold cyan]\n")
+
+    images = input_text("产品图片路径（本地路径，逗号分隔）", "")
+    image_paths = [p.strip() for p in images.split(",") if p.strip()]
+    if not image_paths:
+        console.print("[yellow]未提供图片路径，已取消视频生成。[/yellow]")
+        return
+
+    product = input_text("产品名称", "测试产品")
+    context = input_text("额外上下文（可选）", "")
+    try:
+        duration_str = input_text("视频时长（秒）", "10")
+        duration = int(duration_str)
+    except ValueError:
+        duration = 10
+
+    voice = input_text("配音音色 ID（留空使用默认 male-qn-qingse）", "male-qn-qingse")
+    auto_publish = confirm_dialog("自动发布", "是否在生成后自动发布到小红书？")
+
+    wf = VideoWorkflow(output_dir="output/videos")
+
+    console.print(
+        f"\n[green]开始生成视频...[/green]\n"
+        f"  📷 图片: {len(image_paths)} 张\n"
+        f"  📦 产品: {product or '自动识别'}\n"
+        f"  ⏱️ 时长: {duration} 秒\n"
+        f"  🔊 音色: {voice}\n"
+    )
+
+    try:
+        result = wf.run(
+            image_paths=image_paths,
+            product_name=product,
+            context=context,
+            duration=duration,
+            auto_publish=auto_publish,
+            voice=voice,
+        )
+
+        status = result.get("status")
+        if status == "completed":
+            output = result.get("output", {})
+            console.print("\n[bold green]✅ 视频生成完成![/bold green]")
+            if output.get("video"):
+                console.print(f"  📹 视频文件: {output['video']}")
+            console.print(f"  ⏱️ 总耗时: {result.get('duration', 0):.1f} 秒")
+            if "publish" in result.get("steps", {}):
+                pub = result["steps"]["publish"]
+                if pub.get("status") == "success":
+                    console.print(f"  🌐 已发布: {pub.get('url', '')}")
+        else:
+            console.print("\n[bold red]❌ 视频生成失败[/bold red]")
+            err = result.get("error", "未知错误")
+            console.print(f"  错误: {err}")
+            steps = result.get("steps", {})
+            if steps.get("video", {}).get("last_error") and steps["video"].get("last_error") != err:
+                console.print(f"  视频步骤详情: {steps['video']['last_error']}")
+            if steps.get("analysis") and steps["analysis"].get("error"):
+                console.print(f"  分析步骤: {steps['analysis']['error']}")
+            if steps.get("script") and isinstance(steps["script"], dict) and steps["script"].get("error"):
+                console.print(f"  脚本步骤: {steps['script']['error']}")
+    except Exception as e:
+        console.print(f"\n[bold red]❌ 运行工作流出错: {e}[/bold red]")
+
+
+def configure_video_env_keys():
+    """交互式配置视频工作流相关的 API Key（写入 config/.env）"""
+    base = Path(__file__).resolve().parent.parent.parent
+    env_path = base / "config" / ".env"
+
+    existing = {}
+    if env_path.exists():
+        try:
+            content = env_path.read_text(encoding="utf-8")
+            for line in content.splitlines():
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                k, v = line.split("=", 1)
+                existing[k.strip()] = v.strip()
+        except Exception:
+            pass
+
+    console.print("\n[cyan]配置将写入: [/cyan]" + str(env_path))
+    console.print("[dim]已存在的值不会显示具体内容，仅显示是否已配置。[/dim]\n")
+
+    keys = [
+        ("ZHIPU_API_KEY", "智谱 GLM API Key"),
+        ("ZHIPU_BASE_URL", "智谱 GLM Base URL（可选）"),
+        ("MINIMAX_API_KEY", "Minimax API Key（音频/TTS）"),
+        ("KLING_API_KEY", "Kling/可灵 视频生成 API Key"),
+    ]
+
+    for key, label in keys:
+        masked = "（已配置）" if key in existing and existing[key] else "（未配置）"
+        default = ""
+        prompt_title = f"{label} [{key}] {masked}"
+        value = input_text(prompt_title, default)
+        if value.strip():
+            existing[key] = value.strip()
+
+    # 选择模型（主流选项）
+    console.print("\n[bold cyan]选择各环节使用的模型（可留空使用默认）[/bold cyan]\n")
+
+    # 图片分析模型（智谱）
+    image_models = ["glm-4.6v", "glm-4", "glm-4-flash"]
+    current_image = existing.get("ZHIPU_IMAGE_MODEL", "glm-4.6v")
+    img_label = f"图片分析模型 [当前: {current_image}]"
+    img_choice_idx = select_option(img_label, image_models + ["保持默认"])
+    if img_choice_idx is not None and img_choice_idx < len(image_models):
+        existing["ZHIPU_IMAGE_MODEL"] = image_models[img_choice_idx]
+
+    # 脚本文案模型（Minimax）
+    script_models = ["MiniMax-M2.5", "abab6.5s-chat", "abab6.5-chat"]
+    current_script = existing.get("MINIMAX_SCRIPT_MODEL", "MiniMax-M2.5")
+    script_label = f"脚本文案模型 [当前: {current_script}]"
+    script_choice_idx = select_option(script_label, script_models + ["保持默认"])
+    if script_choice_idx is not None and script_choice_idx < len(script_models):
+        existing["MINIMAX_SCRIPT_MODEL"] = script_models[script_choice_idx]
+
+    # 视频生成模型（智谱 CogVideoX 系列）
+    video_models = ["cogvideoX-3", "cogvideoX-1.5"]
+    current_video = existing.get("ZHIPU_VIDEO_MODEL", "cogvideoX-3")
+    video_label = f"视频生成模型 [当前: {current_video}]"
+    video_choice_idx = select_option(video_label, video_models + ["保持默认"])
+    if video_choice_idx is not None and video_choice_idx < len(video_models):
+        existing["ZHIPU_VIDEO_MODEL"] = video_models[video_choice_idx]
+
+    # 音频/TTS 模型（Minimax）
+    audio_models = ["speech-01-turbo", "speech-01"]
+    current_audio = existing.get("MINIMAX_AUDIO_MODEL", "speech-01-turbo")
+    audio_label = f"音频/TTS 模型 [当前: {current_audio}]"
+    audio_choice_idx = select_option(audio_label, audio_models + ["保持默认"])
+    if audio_choice_idx is not None and audio_choice_idx < len(audio_models):
+        existing["MINIMAX_AUDIO_MODEL"] = audio_models[audio_choice_idx]
+
+    try:
+        env_path.parent.mkdir(parents=True, exist_ok=True)
+        lines = [f"{k}={v}" for k, v in existing.items()]
+        env_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        console.print(f"\n[green]已更新: {env_path}[/green]\n")
+    except Exception as e:
+        console.print(f"[red]写入失败: {e}[/red]")
 
 
 def do_settings_menu(agent, cfg):
@@ -389,8 +649,25 @@ def do_settings_menu(agent, cfg):
                 cfg.save()
                 console.print(f"[green]已选择模型: {selected_model}[/green]")
         elif choice == 2:
-            console.print("\n[yellow]请在配置文件中设置 API Key[/yellow]")
-            console.print(f"[dim]配置文件位置: ~/.xiaohongshu_agent/config.json[/dim]")
+            # 交互式配置 API Key
+            providers = get_available_providers()
+            current_provider = cfg.get("llm_provider", "openai")
+            provider_info = providers.get(current_provider, providers.get("openai"))
+
+            console.print(
+                f"\n[cyan]当前提供商: {provider_info['name']} ({current_provider})[/cyan]"
+            )
+            console.print(
+                "[dim]提示: 只会写入本机用户配置文件 ~/.xiaohongshu_agent/config.json[/dim]"
+            )
+
+            new_key = input_text("输入新的 API Key（留空则不修改）")
+            if new_key.strip():
+                cfg.set(f"{current_provider}_api_key", new_key.strip())
+                cfg.save()
+                console.print("[green]API Key 已更新并保存[/green]")
+            else:
+                console.print("[yellow]未输入内容，API Key 未修改[/yellow]")
         elif choice == 3:
             new_url = input_text("MCP 地址", cfg.get("mcp_url"))
             cfg.set("mcp_url", new_url)

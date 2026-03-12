@@ -2,6 +2,14 @@
 Web 服务启动入口
 """
 import os
+from pathlib import Path
+
+# 加载环境变量
+env_path = Path(__file__).parent.parent.parent / "config" / ".env"
+if env_path.exists():
+    from dotenv import load_dotenv
+    load_dotenv(env_path)
+
 from xiaohongshu_agent.web.app import create_app
 
 app = create_app()
