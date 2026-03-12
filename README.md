@@ -1,7 +1,10 @@
 # 🤖 小红书 AI Agent
 
 一个强大的小红书运营 AI Agent 框架，支持搜索、发布、AI 对话、记忆等功能。
-<img width="2880" height="1626" alt="image" src="https://github.com/user-attachments/assets/247dd28e-4f79-478e-867c-dd249150f5c0" />
+CLI
+<img width="1160" height="696" alt="image" src="https://github.com/user-attachments/assets/ba154fae-1092-4303-a175-ea2569315e89" />
+Web UI 地址：http://127.0.0.1:5003/
+<img width="2880" height="1626" alt="image" src="https://github.com/user-attachments/assets/a191058e-a9b4-4263-94b9-27da7113271f" />
 
 ## ✨ 功能特性
 
@@ -14,6 +17,7 @@
 - 🔌 **多 LLM** - 支持 OpenAI/Claude/智谱/Kimi/Minimax/Gemini
 - 🛠️ **工具系统** - 文件读写、命令执行、网页搜索
 - 📝 **日志系统** - 完整的运行日志
+- 📝 **工作流** - 内嵌电商产品导演skills写scriptgenerator
 
 ## 📁 项目结构
 
@@ -176,14 +180,14 @@ result = web_tool.execute(query="AI 工具")
 
 ```
 ┌────────────┐    ┌────────────┐    ┌─────────────┐
-│ 1. 分析图片 │ -> │ 2. 生成脚本 │ -> │ 3. 生成视频 │
-│  (GLM-4V)  │    │  (GLM-4)   │    │  (可灵AI)   │
+│ 1. 分析图片 │ -> │ 2. 生成脚本 │ -> │ 3. 生成视频   │
+│  (GLM-4.6V)│    (Minimax-m2.5)│   │ Seedance2.0)│
 └────────────┘    └────────────┘    └─────────────┘
                                               │
                                               ▼
 ┌────────────┐    ┌────────────┐    ┌─────────────┐
 │ 6. 发布     │ <- │ 5. 整合剪辑 │ <- │ 4. 生成音频 │
-│  小红书    │    │  (FFmpeg)  │    │  (海螺TTS)  │
+│  小红书    │     │  (FFmpeg)  │    │  (海螺TTS)  │
 └────────────┘    └────────────┘    └─────────────┘
 ```
 
@@ -191,9 +195,9 @@ result = web_tool.execute(query="AI 工具")
 
 | 环节 | 服务 | 成本 |
 |------|------|------|
-| 图片分析 | 智谱 GLM-4V | ¥0.01 |
-| 脚本生成 | 智谱 GLM-4 | ¥0.005 |
-| 视频生成 | 可灵 AI | ¥1.5-3 |
+| 图片分析 | 智谱 GLM-4.6V | ¥0.01 |
+| 脚本生成 | Minimax-m2.5 | ¥0.005 |
+| 视频生成 | Seedance2.0 | ¥1.5-3 |
 | 音频生成 | 海螺 TTS | ¥0.3-0.5 |
 | **合计** | | **¥2-4/条** |
 
