@@ -1,9 +1,14 @@
 # 🤖 小红书 AI Agent
 
 一个强大的小红书运营 AI Agent 框架，支持搜索、发布、AI 对话、记忆等功能。
+WEB UI
 <img width="2880" height="1626" alt="image" src="https://github.com/user-attachments/assets/247dd28e-4f79-478e-867c-dd249150f5c0" />
 
+CLI
 <img width="1158" height="698" alt="image" src="https://github.com/user-attachments/assets/63376406-8b15-4e3f-824c-4263096eda21" />
+
+<img width="1090" height="684" alt="image" src="https://github.com/user-attachments/assets/1147d538-9f04-40de-8e83-4b6c58e196a4" />
+
 
 
 
