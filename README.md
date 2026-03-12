@@ -3,7 +3,8 @@
 一个强大的小红书运营 AI Agent 框架，支持搜索、发布、AI 对话、记忆等功能。
 <img width="2880" height="1626" alt="image" src="https://github.com/user-attachments/assets/247dd28e-4f79-478e-867c-dd249150f5c0" />
 
-<img width="1160" height="770" alt="image" src="https://github.com/user-attachments/assets/e4aeee93-a1bd-48b7-93e5-632f9b0c7a32" />
+<img width="1160" height="770" alt="image" src="https://github.com/user-attachments/assets/268fb34d-9229-45ed-8857-35e0a268dc33" />
+
 
 
 ## ✨ 功能特性
