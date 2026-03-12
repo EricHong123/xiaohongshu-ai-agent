@@ -143,8 +143,8 @@ class VideoGenerator:
     def wait_for_completion(
         self,
         task_id: str,
-        max_wait: int = 300,
-        interval: int = 3
+        max_wait: int = 600,
+        interval: int = 5
     ) -> Dict[str, Any]:
         """等待视频生成完成"""
         elapsed = 0

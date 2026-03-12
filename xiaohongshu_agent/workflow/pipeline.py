@@ -195,8 +195,8 @@ class VideoWorkflow:
             # 等待视频生成完成
             if "task_id" in video_result:
                 task_id = video_result["task_id"]
-                print(f"    任务ID: {task_id}, 等待生成...")
-                wait_result = self.video_gen.wait_for_completion(task_id)
+                print(f"    任务ID: {task_id}, 等待生成(最长10分钟)...")
+                wait_result = self.video_gen.wait_for_completion(task_id, max_wait=600, interval=5)
 
                 if wait_result.get("status") == "completed":
                     video_url = wait_result.get("video_url", "")
@@ -327,29 +327,52 @@ class VideoWorkflow:
 
         return result
 
-    def _download_video(self, url: str, filename: str, max_retries: int = 3) -> str:
-        """下载视频 - 带重试机制"""
+    def _download_video(self, url: str, filename: str, max_retries: int = 5) -> str:
+        """下载视频 - 带重试机制和延长超时"""
         import requests
 
         output_path = os.path.join(self.output_dir, filename)
 
         for attempt in range(max_retries):
             try:
-                resp = requests.get(url, timeout=120)
+                print(f"    尝试下载 ({attempt+1}/{max_retries})...")
+                # 延长超时时间到 300 秒
+                resp = requests.get(url, timeout=300, stream=True)
+
                 if resp.status_code == 200:
+                    # 流式写入，避免大文件内存问题
+                    total_size = int(resp.headers.get('content-length', 0))
+                    downloaded = 0
+
                     with open(output_path, "wb") as f:
-                        f.write(resp.content)
+                        for chunk in resp.iter_content(chunk_size=8192):
+                            if chunk:
+                                f.write(chunk)
+                                downloaded += len(chunk)
+                                if total_size > 0:
+                                    progress = (downloaded / total_size) * 100
+                                    if downloaded % (1024 * 1024) < 8192:  # 每1MB打印一次进度
+                                        print(f"    下载进度: {progress:.1f}%")
+
+                    print(f"    ✅ 下载完成: {filename}")
                     return output_path
                 else:
-                    print(f"下载失败 (尝试 {attempt+1}/{max_retries}): HTTP {resp.status_code}")
+                    print(f"    下载失败 (尝试 {attempt+1}/{max_retries}): HTTP {resp.status_code}")
+
+            except requests.exceptions.Timeout:
+                print(f"    下载超时 (尝试 {attempt+1}/{max_retries})")
+            except requests.exceptions.ConnectionError as e:
+                print(f"    连接失败 (尝试 {attempt+1}/{max_retries}): {e}")
             except Exception as e:
-                print(f"下载失败 (尝试 {attempt+1}/{max_retries}): {e}")
-            
+                print(f"    下载失败 (尝试 {attempt+1}/{max_retries}): {e}")
+
             if attempt < max_retries - 1:
                 import time
-                time.sleep(2)  # 等待后重试
+                wait_time = (attempt + 1) * 3  # 递增等待时间: 3, 6, 9, 12 秒
+                print(f"    等待 {wait_time} 秒后重试...")
+                time.sleep(wait_time)
 
-        print(f"下载视频失败: 已重试{max_retries}次")
+        print(f"    ❌ 下载失败: 已重试{max_retries}次")
         return ""
 
     def get_status(self, task_id: str) -> Dict[str, Any]:
