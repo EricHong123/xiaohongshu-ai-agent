@@ -20,6 +20,52 @@ Web UI 地址：http://127.0.0.1:5003/
 - 🛠️ **工具系统** - 文件读写、命令执行、网页搜索
 - 📝 **日志系统** - 完整的运行日志
 - 📝 **工作流** - 内嵌电商产品导演skills写scriptgenerator
+- 🤖 **Claude Code Skills** - 集成小红书自动化技能（认证、发布、搜索、互动）
+
+## Claude Code Skills (小红书自动化)
+
+项目集成了 Claude Code Skills，可通过自然语言控制小红书：
+
+| 技能 | 说明 | 核心能力 |
+|------|------|----------|
+| **xhs-auth** | 认证管理 | 登录检查、扫码登录、多账号切换 |
+| **xhs-publish** | 内容发布 | 图文 / 视频 / 长文发布、分步预览 |
+| **xhs-explore** | 内容发现 | 关键词搜索、笔记详情、用户主页、首页推荐 |
+| **xhs-interact** | 社交互动 | 评论、回复、点赞、收藏 |
+| **xhs-content-ops** | 复合运营 | 竞品分析、热点追踪、批量互动 |
+
+### 安装 Skills
+
+```bash
+# Skills 已集成在 .claude/skills 目录
+# 安装 Python 依赖
+cd xhs_automation
+uv sync
+```
+
+### 使用方式
+
+安装 Skills 后，直接用自然语言与 Claude Code 对话：
+
+> "登录小红书" / "搜索关于AI的笔记" / "帮我发一条图文笔记"
+
+### CLI 命令
+
+```bash
+cd xhs_automation
+
+# 启动 Chrome
+python scripts/chrome_launcher.py
+
+# 检查登录状态
+python scripts/cli.py check-login
+
+# 搜索笔记
+python scripts/cli.py search-feeds --keyword "关键词"
+
+# 发布图文
+python scripts/cli.py publish --title-file title.txt --content-file content.txt --images "/path/pic1.jpg"
+```
 
 ## 📁 项目结构
 
@@ -57,6 +103,22 @@ xiaohongshu_agent/           # 主包
 ├── workflow/                # 视频生成工作流
 └── utils/                  # 工具
     └── logger.py           # 日志系统
+
+xhs_automation/            # 小红书自动化 (CDP 引擎)
+├── scripts/               # Python CLI 工具
+│   ├── cli.py             # 统一 CLI 入口
+│   ├── chrome_launcher.py # Chrome 进程管理
+│   ├── xhs/               # 核心自动化包
+│   └── ...
+└── pyproject.toml         # 项目配置
+
+.claude/skills/             # Claude Code Skills
+├── xhs-auth/              # 认证技能
+├── xhs-publish/           # 发布技能
+├── xhs-explore/           # 搜索发现技能
+├── xhs-interact/          # 互动技能
+├── xhs-content-ops/       # 复合运营技能
+└── SKILL.md               # 技能入口
 
 pyproject.toml              # 项目配置
 ```
