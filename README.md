@@ -2,6 +2,8 @@
 
 一个强大的小红书运营 AI Agent 框架，支持搜索、发布、AI 对话、记忆等功能。
 CLI
+<img width="1964" height="1696" alt="image" src="https://github.com/user-attachments/assets/3f8eee98-2ff2-4cfa-bffc-967401c47119" />
+
 <img width="1160" height="696" alt="image" src="https://github.com/user-attachments/assets/ba154fae-1092-4303-a175-ea2569315e89" />
 Web UI 地址：http://127.0.0.1:5003/
 <img width="2880" height="1626" alt="image" src="https://github.com/user-attachments/assets/a191058e-a9b4-4263-94b9-27da7113271f" />
