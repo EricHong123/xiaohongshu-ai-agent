@@ -23,9 +23,9 @@ PROVIDERS_INFO = {
     },
     "zhipu": {
         "name": "智谱 GLM",
-        "env_key": "ZHIPU_API_KEY",
+        "env_key": "343421dc621b4dc494aa6c693f500ed3.M7s8XK5hE32Kukqe",
         "models": ["glm-4", "glm-4-flash", "glm-4-plus", "glm-3-turbo"],
-        "default_model": "glm-4",
+        "default_model": "glm-4.6v",
     },
     "kimi": {
         "name": "Kimi",
@@ -35,7 +35,7 @@ PROVIDERS_INFO = {
     },
     "minimax": {
         "name": "Minimax",
-        "env_key": "MINIMAX_API_KEY",
+        "env_key": "sk-cp-BCa8OKKg8ce-Cbh3gxvA5X2A-Ey9PbBuDhN6rlPKg71xHyKkKCnmjwnHwGz9npLxUruJZZCAJEI3u_iuKe_CHzkJ2LUHuMUAvJtgY-7aPU_IjUoLy1QH49o",
         "models": ["minimax-m2.5", "abab6.5s-chat", "abab6.5-chat", "abab5.5s-chat", "abab5.5-chat"],
         "default_model": "minimax-m2.5",
     },

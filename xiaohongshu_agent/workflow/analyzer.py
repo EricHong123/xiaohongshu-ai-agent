@@ -8,12 +8,12 @@ from typing import List, Dict, Any, Optional
 
 
 class ImageAnalyzer:
-    """使用智谱GLM-4V分析产品图片"""
+    """使用智谱GLM-4.6v分析产品图片"""
 
     def __init__(
         self,
-        api_key: str = "",
-        base_url: str = "",
+        api_key: str = "343421dc621b4dc494aa6c693f500ed3.M7s8XK5hE32Kukqe",
+        base_url: str = "https://open.bigmodel.cn/api/paas/v4",
         model: str = "glm-4-flash"
     ):
         self.api_key = api_key or os.getenv("ZHIPU_API_KEY", "")
