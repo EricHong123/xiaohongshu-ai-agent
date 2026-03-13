@@ -724,12 +724,32 @@ export MINIMAX_API_KEY="your-key"
         }
 
         async function startService(id) {
-            await fetch('/api/service/start/' + id, { method: 'POST' });
+            try {
+                const response = await fetch('/api/service/start/' + id, { method: 'POST' });
+                const result = await response.json();
+                if (result.success) {
+                    alert(result.message);
+                } else {
+                    alert('启动失败: ' + (result.error || '未知错误'));
+                }
+            } catch (e) {
+                alert('启动失败: ' + e.message);
+            }
             refreshServices();
         }
 
         async function stopService(id) {
-            await fetch('/api/service/stop/' + id, { method: 'POST' });
+            try {
+                const response = await fetch('/api/service/stop/' + id, { method: 'POST' });
+                const result = await response.json();
+                if (result.success) {
+                    alert(result.message);
+                } else {
+                    alert('停止失败: ' + (result.error || '未知错误'));
+                }
+            } catch (e) {
+                alert('停止失败: ' + e.message);
+            }
             refreshServices();
         }
 

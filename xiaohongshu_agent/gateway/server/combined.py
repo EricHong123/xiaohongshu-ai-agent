@@ -249,7 +249,7 @@ class CombinedServer:
         print(f"   WebSocket: ws://localhost:{ws_port}")
 
         # 使用 SocketIO 运行（同时支持 HTTP 和 WebSocket）
-        self.socketio.run(self.app, host="0.0.0.0", port=ws_port, debug=False)
+        self.socketio.run(self.app, host="0.0.0.0", port=ws_port, debug=False, allow_unsafe_werkzeug=True)
 
     def run_separate(self, http_port: int = 3000, ws_port: int = 3001):
         """分离运行 HTTP 和 WebSocket"""
@@ -261,7 +261,7 @@ class CombinedServer:
         print(f"   HTTP:  http://localhost:{http_port}")
         print(f"   WebSocket: ws://localhost:{ws_port}")
 
-        self.socketio.run(self.app, host="0.0.0.0", port=ws_port, debug=False)
+        self.socketio.run(self.app, host="0.0.0.0", port=ws_port, debug=False, allow_unsafe_werkzeug=True)
 
     def _log(self, level: str, message: str, **kwargs):
         if self.logger:

@@ -158,7 +158,7 @@ class WebSocketServer:
         """运行服务器"""
         if not self.socketio:
             self.create_app()
-        self.socketio.run(self.socketio.app, host=host, port=port, **kwargs)
+        self.socketio.run(self.socketio.app, host=host, port=port, allow_unsafe_werkzeug=True, **kwargs)
 
     def _log(self, level: str, message: str, **kwargs):
         if self.logger:
