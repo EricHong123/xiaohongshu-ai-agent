@@ -2,6 +2,7 @@
 LLM 提供商模块
 """
 from xiaohongshu_agent.providers.base import BaseProvider
+from xiaohongshu_agent.providers.retry import RetryConfig, get_default_retry_config
 from xiaohongshu_agent.providers.openai import OpenAIProvider
 from xiaohongshu_agent.providers.anthropic import AnthropicProvider
 from xiaohongshu_agent.providers.zhipu import ZhipuProvider

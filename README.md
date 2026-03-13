@@ -1,12 +1,58 @@
 # 🤖 小红书 AI Agent
 
 一个强大的小红书运营 AI Agent 框架，支持搜索、发布、AI 对话、记忆等功能。
-CLI
-<img width="1964" height="1696" alt="image" src="https://github.com/user-attachments/assets/3f8eee98-2ff2-4cfa-bffc-967401c47119" />
 
-<img width="1160" height="696" alt="image" src="https://github.com/user-attachments/assets/ba154fae-1092-4303-a175-ea2569315e89" />
-Web UI 地址：http://127.0.0.1:5003/
-<img width="2880" height="1626" alt="image" src="https://github.com/user-attachments/assets/a191058e-a9b4-4263-94b9-27da7113271f" />
+## ✨ 新版本特性 (V2)
+
+### 🚀 Gateway AI Agent 网关
+
+V2 版本新增 **Gateway AI Agent 网关**，提供统一的 Agent 管理、命令系统和 HTTP/WebSocket API：
+
+- **多 Agent 路由** - 支持关键词路由、轮询、首选可用 Agent
+- **会话管理** - 自动保存对话历史，支持多会话隔离
+- **工具网关** - 统一工具注册和调用
+- **命令系统** - 快捷命令 `/xhs`, `/doctor`, `/agent` 等
+- **HTTP API** - RESTful 接口支持
+- **WebSocket** - 实时消息推送
+
+### 📡 Gateway 命令
+
+通过 `/` 前缀使用快捷命令：
+
+| 命令 | 说明 |
+|------|------|
+| `/help` | 显示帮助 |
+| `/status` | 系统状态 |
+| `/xhs login` | 获取登录二维码 |
+| `/xhs check-login` | 检查登录状态 |
+| `/xhs search <关键词>` | 搜索笔记 |
+| `/xhs publish <内容>` | 发布笔记 |
+| `/doctor` | 系统诊断 |
+| `/doctor fix` | 自动修复 |
+| `/gateway config` | Gateway 配置 |
+
+### 🎯 Gateway 架构
+
+```
+┌─────────────────────────────────────────┐
+│              Gateway                     │
+├─────────────────────────────────────────┤
+│  ┌─────────────┐  ┌─────────────┐       │
+│  │  Session   │  │   Agent     │       │
+│  │  Manager   │  │  Registry   │       │
+│  └─────────────┘  └─────────────┘       │
+│  ┌─────────────┐  ┌─────────────┐       │
+│  │    Tool    │  │  Command    │       │
+│  │  Gateway   │  │  Registry   │       │
+│  └─────────────┘  └─────────────┘       │
+│  ┌─────────────────────────────────┐   │
+│  │    xhs_automation CLI           │   │
+│  │  (登录/搜索/发布/互动)           │   │
+│  └─────────────────────────────────┘   │
+└─────────────────────────────────────────┘
+```
+
+---
 
 ## ✨ 功能特性
 
@@ -83,6 +129,24 @@ xiaohongshu_agent/           # 主包
 │       ├── filesystem.py   # 文件工具
 │       ├── shell.py       # Shell 工具
 │       └── web.py         # 网页工具
+├── gateway/                 # V2 新增：Gateway 网关
+│   ├── __init__.py        # 网关入口
+│   ├── types.py           # 类型定义
+│   ├── commands.py         # 命令系统
+│   ├── core/               # 核心模块
+│   │   ├── session.py     # 会话管理
+│   │   ├── registry.py    # Agent 注册
+│   │   ├── tool.py        # 工具网关
+│   │   └── orchestrator.py # 多Agent编排
+│   ├── tools/              # 工具实现
+│   │   ├── xhs_automation.py  # xhs_automation 封装
+│   │   └── xhs_tools.py   # 工具注册
+│   ├── server/             # HTTP/WebSocket 服务器
+│   │   ├── http.py        # HTTP API
+│   │   ├── websocket.py    # WebSocket
+│   │   └── combined.py    # 组合服务器
+│   └── adapter/            # 适配器
+│       └── xiaohongshu.py # 小红书Agent适配
 ├── channels/               # 消息渠道
 │   └── xiaohongshu.py    # 小红书 MCP
 ├── cli/                    # 命令行
@@ -180,6 +244,10 @@ python3 -m xiaohongshu_agent --chat      # 对话
 
 # 交互式菜单
 python3 -m xiaohongshu_agent
+
+# Gateway 服务器模式
+python3 run_server.py   # HTTP + WebSocket
+python3 run_commands.py # 测试命令系统
 ```
 
 ## 📖 使用指南
@@ -191,6 +259,21 @@ xhs AI --search     # 搜索
 xhs --stats        # 查看统计
 xhs --chat         # AI 对话
 xhs --config       # 显示配置
+```
+
+### Gateway API
+
+```bash
+# 启动 Gateway 服务器
+python3 run_server.py
+
+# HTTP API
+curl -X POST http://localhost:3000/api/v1/messages \
+  -H "Content-Type: application/json" \
+  -d '{"content": "hello"}'
+
+# WebSocket
+ws://localhost:3001/socket.io
 ```
 
 ### Python API
@@ -417,6 +500,15 @@ python3 -m xiaohongshu_agent --config
 - 权限设置
 
 ## 📝 更新日志
+
+### V2 (2026-03-13)
+- 新增 Gateway AI Agent 网关
+- 多 Agent 路由系统（关键词/轮询/首选可用）
+- 会话管理器（历史保存、多会话隔离）
+- 命令系统 `/xhs`, `/doctor`, `/agent` 等
+- HTTP API + WebSocket 服务器
+- 集成 xhs_automation 到 Gateway
+- 修复代理问题（NO_PROXY）
 
 ### v1.3.1 (2026-03-11)
 - 视频生成集成电商导演Skill专业分镜头模板

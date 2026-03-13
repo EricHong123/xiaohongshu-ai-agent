@@ -1,11 +1,16 @@
 """
 OpenAI 提供商
 支持 GPT-4.5, o1, o3 等最新模型
+支持重试机制
 """
 import os
+import logging
 from typing import List, Dict, Any, Optional
 
 from xiaohongshu_agent.providers.base import BaseProvider
+from xiaohongshu_agent.providers.retry import RetryConfig, with_retry, get_default_retry_config
+
+logger = logging.getLogger(__name__)
 
 
 class OpenAIProvider(BaseProvider):
@@ -14,14 +19,21 @@ class OpenAIProvider(BaseProvider):
     # o1/o3 系列需要特殊处理
     REASONING_MODELS = ["o1", "o1-mini", "o1-preview", "o3", "o3-mini"]
 
-    def __init__(self, api_key: str = "", base_url: str = "", model: str = "gpt-4o"):
-        super().__init__(api_key, base_url, model)
+    def __init__(
+        self,
+        api_key: str = "",
+        base_url: str = "",
+        model: str = "gpt-4o",
+        retry_config: Optional[RetryConfig] = None,
+    ):
+        super().__init__(api_key, base_url, model, retry_config)
         self.api_key = api_key or os.getenv("OPENAI_API_KEY", "")
         self.base_url = base_url or os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")
         self.model = model or os.getenv("OPENAI_MODEL", "gpt-4o")
 
+    @with_retry(max_attempts=3, min_wait=2, max_wait=10)
     def chat(self, messages: List[Dict[str, Any]], **kwargs) -> str:
-        """发送聊天请求"""
+        """发送聊天请求（带重试）"""
         try:
             from openai import OpenAI
             client = OpenAI(api_key=self.api_key, base_url=self.base_url)
@@ -38,7 +50,8 @@ class OpenAIProvider(BaseProvider):
                 return response.choices[0].message.content
 
         except Exception as e:
-            return f"OpenAI 调用失败: {e}"
+            logger.error(f"OpenAI API 调用失败: {e}")
+            raise  # 让重试装饰器处理
 
     def _chat_reasoning(self, client, messages: List[Dict[str, Any]]) -> str:
         """处理 o1/o3 推理模型"""
@@ -65,6 +78,7 @@ class OpenAIProvider(BaseProvider):
         )
         return response.choices[0].message.content
 
+    @with_retry(max_attempts=3, min_wait=2, max_wait=10)
     def chat_with_reasoning(
         self,
         messages: List[Dict[str, Any]],
@@ -89,7 +103,8 @@ class OpenAIProvider(BaseProvider):
             return response.choices[0].message.content
 
         except Exception as e:
-            return f"OpenAI 调用失败: {e}"
+            logger.error(f"OpenAI API 调用失败: {e}")
+            raise
 
     def get_name(self) -> str:
         return "OpenAI"

@@ -135,6 +135,21 @@ class Database:
         cursor.execute("DELETE FROM chat_history")
         self.conn.commit()
 
+    def cleanup_expired_chat_history(self, ttl_days: int = 30):
+        """清理过期的对话历史
+
+        Args:
+            ttl_days: 保留天数，默认 30 天
+        """
+        cursor = self.conn.cursor()
+        cursor.execute(
+            "DELETE FROM chat_history WHERE created_at < datetime('now', '-' || ? || ' days')",
+            (ttl_days,)
+        )
+        deleted = cursor.rowcount
+        self.conn.commit()
+        return deleted
+
     # ===== 帖子 =====
     def add_post(self, post: Dict):
         """添加帖子"""

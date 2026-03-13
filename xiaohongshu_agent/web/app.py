@@ -3,11 +3,13 @@ Flask Web 应用
 """
 import os
 from flask import Flask, render_template, request, jsonify, session
+from datetime import datetime
 from xiaohongshu_agent import XiaohongshuAgent
 from xiaohongshu_agent.config import load_config, validate_config
 from xiaohongshu_agent.providers import get_available_providers
 from xiaohongshu_agent.utils.logger import logger
 from xiaohongshu_agent.web.video_api import register_video_routes
+from xiaohongshu_agent.web.health import check_health
 
 
 # 全局 Agent 实例
@@ -224,10 +226,8 @@ def create_app():
     def health():
         """健康检查"""
         global agent
-        return jsonify({
-            'success': True,
-            'agent_initialized': agent is not None
-        })
+        status, http_code = check_health(agent)
+        return jsonify(status), http_code
 
     @app.route('/api/channel/check_login', methods=['POST'])
     def check_login():
