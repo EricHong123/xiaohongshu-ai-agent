@@ -12,6 +12,11 @@ import time
 from typing import Any
 
 import requests
+import os
+# 禁用代理，避免本地连接走代理导致 502
+for var in ["http_proxy", "https_proxy", "HTTP_PROXY", "HTTPS_PROXY"]:
+    os.environ.pop(var, None)
+os.environ["NO_PROXY"] = "127.0.0.1,localhost"
 import websockets.sync.client as ws_client
 
 from .errors import CDPError, ElementNotFoundError
@@ -575,7 +580,10 @@ class Browser:
 
     def connect(self) -> None:
         """连接到 Chrome DevTools。"""
-        resp = requests.get(f"{self.base_url}/json/version", timeout=5)
+        # 创建不使用代理的 session
+        session = requests.Session()
+        session.trust_env = False
+        resp = session.get(f"{self.base_url}/json/version", timeout=5)
         resp.raise_for_status()
         info = resp.json()
         ws_url = info["webSocketDebuggerUrl"]
