@@ -560,8 +560,38 @@ HTML = """
                     <div class="search-results" id="search-results"></div>
                 </div>
                 <div class="card">
+                    <h2><span class="icon">📰</span> 首页内容</h2>
+                    <div style="margin-bottom: 10px;">
+                        <button class="btn btn-start" onclick="loadFeeds()">刷新首页</button>
+                    </div>
+                    <div class="search-results" id="feeds-list"></div>
+                </div>
+
+                <div class="card">
                     <h2><span class="icon">👥</span> 账号管理</h2>
+                    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                        <input type="text" id="new-account-name" placeholder="账号名称" style="flex:1; padding:8px; border-radius:6px; border:1px solid #444; background:#222; color:white;">
+                        <button class="btn btn-start" onclick="addAccount()">添加</button>
+                    </div>
                     <div id="account-list"></div>
+                </div>
+
+                <div class="card">
+                    <h2><span class="icon">⚡</span> 快捷操作</h2>
+                    <div class="quick-actions">
+                        <div class="quick-action" onclick="xhsLogout()">
+                            <div class="icon">🚪</div>
+                            <div class="label">退出登录</div>
+                        </div>
+                        <div class="quick-action" onclick="loadFeeds()">
+                            <div class="icon">📰</div>
+                            <div class="label">刷新首页</div>
+                        </div>
+                        <div class="quick-action" onclick="refreshXhs()">
+                            <div class="icon">🔄</div>
+                            <div class="label">刷新状态</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -754,6 +784,50 @@ export MINIMAX_API_KEY="your-key"
             refreshXhs();
         }
 
+        async function xhsLogout() {
+            if (!confirm('确定退出登录吗？')) return;
+            const response = await fetch('/api/xhs/logout', { method: 'POST' });
+            const result = await response.json();
+            alert(result.success ? '已退出登录' : '退出失败: ' + (result.error || '未知错误'));
+            refreshXhs();
+        }
+
+        async function loadFeeds() {
+            const response = await fetch('/api/xhs/feeds');
+            const result = await response.json();
+            const container = document.getElementById('feeds-list');
+            if (result.success && result.data && result.data.feeds) {
+                const feeds = result.data.feeds;
+                if (feeds.length > 0) {
+                    container.innerHTML = feeds.slice(0, 10).map(feed => `
+                        <div class="search-result-item">
+                            <div>${feed.title || '无标题'}</div>
+                            <div style="color: #888; font-size: 0.75rem; margin-top: 5px;">
+                                👍 ${feed.likes || 0} | 💬 ${feed.comments || 0} | ⭐ ${feed.collects || 0}
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    container.innerHTML = '<div style="color: #888; text-align: center;">暂无内容</div>';
+                }
+            } else {
+                container.innerHTML = '<div style="color: #ef4444;">获取失败: ' + (result.error || '未知错误') + '</div>';
+            }
+        }
+
+        async function addAccount() {
+            const name = document.getElementById('new-account-name').value;
+            if (!name) {
+                alert('请输入账号名称');
+                return;
+            }
+            const response = await fetch('/api/xhs/add-account?name=' + encodeURIComponent(name), { method: 'POST' });
+            const result = await response.json();
+            alert(result.success ? '账号添加成功' : '添加失败: ' + (result.error || '未知错误'));
+            document.getElementById('new-account-name').value = '';
+            refreshXhs();
+        }
+
         async function xhsSearch() {
             const keyword = document.getElementById('search-keyword').value;
             if (!keyword) return;
@@ -916,6 +990,25 @@ class Handler(SimpleHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(json.dumps(xhs_list_accounts()).encode())
 
+        elif path == '/api/xhs/feeds':
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps(xhs_list_feeds()).encode())
+
+        elif path == '/api/xhs/logout':
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps(xhs_logout()).encode())
+
+        elif path == '/api/xhs/add-account':
+            name = parse_qs(parsed.query).get('name', [''])[0]
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps(xhs_add_account(name)).encode())
+
         elif path.startswith('/api/xhs/search'):
             keyword = parse_qs(parsed.query).get('keyword', [''])[0]
             self.send_response(200)
@@ -1010,3 +1103,36 @@ def run_server(port=8080):
 
 if __name__ == "__main__":
     run_server()
+
+# 更多 xhs_automation 功能
+def xhs_list_feeds() -> dict:
+    """获取首页 Feed"""
+    return run_xhs_command(["list-feeds"])
+
+def xhs_logout() -> dict:
+    """退出登录"""
+    return run_xhs_command(["delete-cookies"])
+
+def xhs_like(feed_id: str, xsec_token: str) -> dict:
+    """点赞笔记"""
+    return run_xhs_command(["like-feed", "--feed-id", feed_id, "--xsec-token", xsec_token])
+
+def xhs_favorite(feed_id: str, xsec_token: str) -> dict:
+    """收藏笔记"""
+    return run_xhs_command(["favorite-feed", "--feed-id", feed_id, "--xsec-token", xsec_token])
+
+def xhs_comment(feed_id: str, xsec_token: str, content: str) -> dict:
+    """发表评论"""
+    return run_xhs_command(["post-comment", "--feed-id", feed_id, "--xsec-token", xsec_token, "--content", content])
+
+def xhs_user_profile(user_id: str, xsec_token: str) -> dict:
+    """获取用户主页"""
+    return run_xhs_command(["user-profile", "--user-id", user_id, "--xsec-token", xsec_token])
+
+def xhs_add_account(name: str, description: str = "") -> dict:
+    """添加账号"""
+    return run_xhs_command(["add-account", "--name", name, "--description", description or ""])
+
+def xhs_remove_account(name: str) -> dict:
+    """删除账号"""
+    return run_xhs_command(["remove-account", "--name", name])
