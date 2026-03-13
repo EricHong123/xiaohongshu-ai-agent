@@ -55,7 +55,7 @@ class XiaohongshuAgent:
 
     def chat(self, message: str) -> str:
         """处理对话"""
-        from xiaohongshu_agent.apps.xhs.usecases import chat
+        from xiaohongshu_agent.services import chat
 
         return chat(self, message)
 
@@ -71,7 +71,7 @@ class XiaohongshuAgent:
 
     def generate_content(self, keyword: str) -> Dict:
         """AI 生成内容"""
-        from xiaohongshu_agent.apps.xhs.usecases import generate_content
+        from xiaohongshu_agent.services import generate_content
 
         return generate_content(self, keyword)
 

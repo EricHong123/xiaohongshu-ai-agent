@@ -205,9 +205,9 @@ def show_config(agent, cfg):
 def do_search(agent, keyword):
     """搜索"""
     console.print(f"\n[cyan]搜索: {keyword}[/cyan]")
-    from xiaohongshu_agent.apps.xhs.usecases import search_posts
+    from xiaohongshu_agent.services import search_notes
 
-    posts = search_posts(agent, keyword)
+    posts = search_notes(agent, keyword)
 
     if posts:
         console.print(f"\n[green]找到 {len(posts)} 条结果:[/green]\n")
@@ -220,7 +220,7 @@ def do_search(agent, keyword):
 
 def do_stats(agent):
     """统计"""
-    from xiaohongshu_agent.apps.xhs.usecases import get_stats
+    from xiaohongshu_agent.services import get_stats
 
     stats = get_stats(agent)
 
@@ -237,7 +237,7 @@ def do_chat(agent):
     console.print("  输入内容让 AI 帮你处理")
     console.print("  输入 'exit' 或 'q' 退出\n")
 
-    from xiaohongshu_agent.apps.xhs.usecases import chat
+    from xiaohongshu_agent.services import chat
 
     while True:
         try:
@@ -400,7 +400,7 @@ def do_publish_menu(agent):
         return
 
     console.print("[cyan]AI 生成内容中...[/cyan]")
-    from xiaohongshu_agent.apps.xhs.usecases import generate_content
+    from xiaohongshu_agent.services import generate_content
 
     content = generate_content(agent, keyword)
 
@@ -408,7 +408,7 @@ def do_publish_menu(agent):
     console.print(f"[green]标签:[/green] {' '.join(['#' + t for t in content.get('tags', [])])}")
 
     if confirm_dialog("确认发布", "确定要发布这篇帖子吗?"):
-        from xiaohongshu_agent.apps.xhs.usecases import publish_post
+        from xiaohongshu_agent.services import publish_post
 
         result = publish_post(
             agent,
