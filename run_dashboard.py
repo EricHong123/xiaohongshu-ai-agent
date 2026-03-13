@@ -996,7 +996,7 @@ class Handler(SimpleHTTPRequestHandler):
     def log_message(self, format, *args):
         pass
 
-def run_server(port=5000):
+def run_server(port=8080):
     server = HTTPServer(('0.0.0.0', port), Handler)
     print(f"""
 ╔═══════════════════════════════════════════════════════════════════╗
